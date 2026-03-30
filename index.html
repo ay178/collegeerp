@@ -971,7 +971,7 @@ function StudentsPage() {
         };
 
         try {
-          const res = await fetch('http://localhost:5000/api/students', {
+          const res = await fetch(`${API_BASE_URL}/api/students`, {
             method: 'POST',
             headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
             body: JSON.stringify(payload)
@@ -1000,7 +1000,7 @@ function StudentsPage() {
           alert(`Student Created Successfully!\n\nLogin Credentials:\nEmail: ${form.email}\nPassword: ${form.password}\n\n⚠️  Please share these credentials with the student. They can change the password after first login.`);
         } catch (networkErr) {
           if (networkErr instanceof TypeError) {
-            throw new Error('Cannot connect to server. Make sure backend is running on http://localhost:5000');
+            throw new Error(`Cannot connect to server at ${API_BASE_URL}. Make sure backend server is running.`);
           }
           throw networkErr;
         }
@@ -1163,7 +1163,7 @@ function TeachersPage() {
         experience: parseInt(formData.experience) || 0,
         status: 'active'
       };
-      const res = await fetch('http://localhost:5000/api/teachers', {
+      const res = await fetch(`${API_BASE_URL}/api/teachers`, {
         method: 'POST',
         headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
         body: JSON.stringify(payload)
@@ -1336,9 +1336,33 @@ const PAGE_TITLES = {
   students:'Student Management',teachers:'Faculty Management',reports:'Reports & Analytics',settings:'System Settings',
 };
 
+// Auto-detect server port (handles fallback ports)
+let API_BASE_URL = 'http://localhost:5000';
+async function detectServerPort() {
+  const ports = [5000, 5001, 5002, 5003, 5004];
+  for (let port of ports) {
+    try {
+      const res = await fetch(`http://localhost:${port}`, { signal: AbortSignal.timeout(1000) });
+      if (res.ok) {
+        API_BASE_URL = `http://localhost:${port}`;
+        console.log(`✅ Server detected on port ${port}`);
+        return port;
+      }
+    } catch (e) {}
+  }
+  console.warn('⚠️ Server not found on expected ports, using default http://localhost:5000');
+  return 5000;
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState('dashboard');
+  const [serverReady, setServerReady] = useState(false);
+
+  // Detect server port on component mount
+  useEffect(() => {
+    detectServerPort().then(() => setServerReady(true)).catch(() => setServerReady(true));
+  }, []);
 
   const renderContent = () => {
     if (!user) return null;
