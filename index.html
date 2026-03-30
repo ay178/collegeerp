@@ -1342,13 +1342,18 @@ async function detectServerPort() {
   const ports = [5000, 5001, 5002, 5003, 5004];
   for (let port of ports) {
     try {
-      const res = await fetch(`http://localhost:${port}`, { signal: AbortSignal.timeout(1000) });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1000);
+      const res = await fetch(`http://localhost:${port}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (res.ok) {
         API_BASE_URL = `http://localhost:${port}`;
         console.log(`✅ Server detected on port ${port}`);
         return port;
       }
-    } catch (e) {}
+    } catch (e) {
+      // Port not available or timeout, try next
+    }
   }
   console.warn('⚠️ Server not found on expected ports, using default http://localhost:5000');
   return 5000;
