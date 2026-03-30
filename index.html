@@ -356,10 +356,30 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    const user = USERS.find(u => u.email === email && u.password === password && u.role === role);
-    if (user) { onLogin(user); }
-    else { setError('Invalid credentials. Please try again.'); }
+  const handleLogin = async () => {
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.message || 'Login failed');
+        return;
+      }
+
+      // Store token and user info
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      onLogin(data.user);
+    } catch (err) {
+      setError('Connection error. Make sure backend is running on port 5000');
+    }
   };
 
   const fillDemo = (r) => {
@@ -1348,8 +1368,18 @@ const PAGE_TITLES = {
 const API_BASE_URL = 'http://localhost:5000';
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [activeView, setActiveView] = useState('dashboard');
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setActiveView('dashboard');
+  };
 
   const renderContent = () => {
     if (!user) return null;
@@ -1371,7 +1401,7 @@ function App() {
 
   return (
     <div className="app-layout">
-      <Sidebar user={user} activeView={activeView} setActiveView={setActiveView} onLogout={()=>{setUser(null);setActiveView('dashboard');}}/>
+      <Sidebar user={user} activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout}/>
       <div className="main-content">
         <div className="topbar">
           <div className="page-title">{PAGE_TITLES[activeView]||'Dashboard'}</div>
