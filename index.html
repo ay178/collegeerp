@@ -918,21 +918,100 @@ function StudentsPage() {
   const [students, setStudents] = useState(STUDENTS);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({name:'',rollNo:'',semester:'',branch:'',div:'',email:'',phone:'',status:'active'});
+  const [form, setForm] = useState({name:'',rollNo:'',semester:'',branch:'',div:'',email:'',phone:'',password:'',status:'active'});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const token = localStorage.getItem('token');
 
   const filtered = students.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.rollNo.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openAdd = () => { setForm({name:'',rollNo:'',semester:'4th',branch:'CS',div:'A',email:'',phone:'',status:'active'}); setModal('add'); };
-  const openEdit = (s) => { setForm({...s}); setModal('edit'); };
-  const save = () => {
-    if(modal==='add') setStudents(p=>[...p,{...form,id:Date.now()}]);
-    else setStudents(p=>p.map(s=>s.id===form.id?form:s));
-    setModal(null);
+  const openAdd = () => { setForm({name:'',rollNo:'',semester:'4th',branch:'CS',div:'A',email:'',phone:'',password:'',status:'active'}); setError(''); setModal('add'); };
+  const openEdit = (s) => { setForm({...s,password:''}); setError(''); setModal('edit'); };
+  
+  const save = async () => {
+    setError('');
+    
+    // Validation
+    if (!form.name || !form.rollNo || !form.email) {
+      setError('Name, roll number, and email are required');
+      return;
+    }
+
+    if (modal === 'add' && !form.password) {
+      setError('Password is required for new students');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError('Please enter a valid email');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (modal === 'add') {
+        // Create student with User account
+        const payload = {
+          name: form.name,
+          rollNo: form.rollNo,
+          semester: form.semester,
+          branch: form.branch,
+          division: form.div,
+          email: form.email,
+          phone: form.phone,
+          password: form.password,
+          status: form.status
+        };
+
+        const res = await fetch('http://localhost:5000/api/students', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || 'Failed to add student');
+        }
+
+        // Add to local state
+        setStudents(p => [...p, {
+          id: Date.now(),
+          name: form.name,
+          rollNo: form.rollNo,
+          semester: form.semester,
+          branch: form.branch,
+          div: form.div,
+          email: form.email,
+          phone: form.phone,
+          status: form.status
+        }]);
+
+        // Show credentials alert
+        alert(`Student Created Successfully!\n\nLogin Credentials:\nEmail: ${form.email}\nPassword: ${form.password}\n\n⚠️  Please share these credentials with the student. They can change the password after first login.`);
+      } else {
+        // Edit student (without password)
+        const editData = {...form};
+        delete editData.password;
+        setStudents(p => p.map(s => s.id === form.id ? {...form, rollNo:form.rollNo} : s));
+      }
+
+      setModal(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
   const del = (id) => { setStudents(p=>p.filter(s=>s.id!==id)); setDeleteConfirm(null); };
 
   return (
@@ -977,6 +1056,7 @@ function StudentsPage() {
               <div className="modal-title" style={{margin:0}}>{modal==='add'?'Add New Student':'Edit Student'}</div>
               <button onClick={()=>setModal(null)} style={{border:'none',background:'none',cursor:'pointer',color:'var(--text3)'}}><Icon name="close" size={18}/></button>
             </div>
+            {error && <div style={{padding:'10px',background:'var(--red-bg)',color:'var(--red)',borderRadius:'6px',marginBottom:'14px',fontSize:'13px'}}>{error}</div>}
             <div className="grid-2" style={{gap:14}}>
               {[['name','Full Name','text'],['rollNo','Roll Number','text'],['email','Email','email'],['phone','Phone','text']].map(([field,label,type])=>(
                 <div className="form-group" key={field} style={{marginBottom:0}}>
@@ -984,6 +1064,12 @@ function StudentsPage() {
                   <input className="form-input" type={type} value={form[field]} onChange={e=>setForm(p=>({...p,[field]:e.target.value}))}/>
                 </div>
               ))}
+              {modal === 'add' && (
+                <div className="form-group" style={{marginBottom:0}}>
+                  <label className="form-label">Temporary Password *</label>
+                  <input className="form-input" type="password" value={form.password} onChange={e=>setForm(p=>({...p,password:e.target.value}))} placeholder="Student will use this to login"/>
+                </div>
+              )}
               <div className="form-group" style={{marginBottom:0}}>
                 <label className="form-label">Branch</label>
                 <select className="form-input" value={form.branch} onChange={e=>setForm(p=>({...p,branch:e.target.value}))}>
@@ -1010,8 +1096,8 @@ function StudentsPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={()=>setModal(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={save}>{modal==='add'?'Add Student':'Save Changes'}</button>
+              <button className="btn btn-secondary" onClick={()=>setModal(null)} disabled={loading}>Cancel</button>
+              <button className="btn btn-primary" onClick={save} disabled={loading}>{loading?'Saving...':modal==='add'?'Add Student':'Save Changes'}</button>
             </div>
           </div>
         </div>
