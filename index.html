@@ -970,33 +970,40 @@ function StudentsPage() {
           status: form.status
         };
 
-        const res = await fetch('http://localhost:5000/api/students', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
-          body: JSON.stringify(payload)
-        });
+        try {
+          const res = await fetch('http://localhost:5000/api/students', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
+            body: JSON.stringify(payload)
+          });
 
-        const data = await res.json();
+          const data = await res.json();
 
-        if (!res.ok) {
-          throw new Error(data.message || 'Failed to add student');
+          if (!res.ok) {
+            throw new Error(data.message || `Server error: ${res.status}`);
+          }
+
+          // Add to local state
+          setStudents(p => [...p, {
+            id: Date.now(),
+            name: form.name,
+            rollNo: form.rollNo,
+            semester: form.semester,
+            branch: form.branch,
+            div: form.div,
+            email: form.email,
+            phone: form.phone,
+            status: form.status
+          }]);
+
+          // Show credentials alert
+          alert(`Student Created Successfully!\n\nLogin Credentials:\nEmail: ${form.email}\nPassword: ${form.password}\n\n⚠️  Please share these credentials with the student. They can change the password after first login.`);
+        } catch (networkErr) {
+          if (networkErr instanceof TypeError) {
+            throw new Error('Cannot connect to server. Make sure backend is running on http://localhost:5000');
+          }
+          throw networkErr;
         }
-
-        // Add to local state
-        setStudents(p => [...p, {
-          id: Date.now(),
-          name: form.name,
-          rollNo: form.rollNo,
-          semester: form.semester,
-          branch: form.branch,
-          div: form.div,
-          email: form.email,
-          phone: form.phone,
-          status: form.status
-        }]);
-
-        // Show credentials alert
-        alert(`Student Created Successfully!\n\nLogin Credentials:\nEmail: ${form.email}\nPassword: ${form.password}\n\n⚠️  Please share these credentials with the student. They can change the password after first login.`);
       } else {
         // Edit student (without password)
         const editData = {...form};
