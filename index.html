@@ -1035,38 +1035,141 @@ function StudentsPage() {
 
 // ─── Admin Teachers Page ──────────────────────────────────────────────────────
 function TeachersPage() {
-  const teachers = [
-    {id:1,name:'Prof. Anjali Singh',dept:'CS',subjects:'Data Structures, Algorithms, DBMS',exp:'8 yrs',email:'anjali@edu.com',students:60},
-    {id:2,name:'Dr. Suresh Nair',dept:'CS',subjects:'Computer Networks, OS',exp:'12 yrs',email:'suresh@edu.com',students:55},
-    {id:3,name:'Prof. Meena Rao',dept:'IT',subjects:'Web Tech, Java',exp:'6 yrs',email:'meena@edu.com',students:48},
-    {id:4,name:'Dr. Alok Gupta',dept:'ME',subjects:'Thermodynamics, Fluid Mechanics',exp:'15 yrs',email:'alok@edu.com',students:62},
-    {id:5,name:'Prof. Rekha Soni',dept:'EE',subjects:'Circuit Theory, Power Systems',exp:'9 yrs',email:'rekha@edu.com',students:44},
-    {id:6,name:'Dr. Vijay Kumar',dept:'EC',subjects:'Microprocessors, VLSI Design',exp:'11 yrs',email:'vijay@edu.com',students:50},
-  ];
+  const [teachers, setTeachers] = useState([
+    {id:1,name:'Prof. Anjali Singh',department:'CS',subjects:['Data Structures', 'Algorithms', 'DBMS'],experience:8,email:'anjali@edu.com'},
+    {id:2,name:'Dr. Suresh Nair',department:'CS',subjects:['Computer Networks', 'OS'],experience:12,email:'suresh@edu.com'},
+    {id:3,name:'Prof. Meena Rao',department:'IT',subjects:['Web Tech', 'Java'],experience:6,email:'meena@edu.com'},
+    {id:4,name:'Dr. Alok Gupta',department:'ME',subjects:['Thermodynamics', 'Fluid Mechanics'],experience:15,email:'alok@edu.com'},
+    {id:5,name:'Prof. Rekha Soni',department:'EE',subjects:['Circuit Theory', 'Power Systems'],experience:9,email:'rekha@edu.com'},
+    {id:6,name:'Dr. Vijay Kumar',department:'EC',subjects:['Microprocessors', 'VLSI Design'],experience:11,email:'vijay@edu.com'},
+  ]);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({name:'',email:'',phone:'',department:'',subjects:'',qualifications:'',experience:0});
+  const token = localStorage.getItem('token');
+
+  const handleInputChange = (e) => {
+    const {name, value} = e.target;
+    setFormData(prev=>({...prev,[name]:value}));
+  };
+
+  const handleAddTeacher = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const subjectsArray = formData.subjects.split(',').map(s=>s.trim()).filter(s=>s);
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        department: formData.department,
+        subjects: subjectsArray,
+        qualifications: formData.qualifications,
+        experience: parseInt(formData.experience) || 0,
+        status: 'active'
+      };
+      const res = await fetch('http://localhost:5000/api/teachers', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to add teacher');
+      setTeachers(prev=>[...prev, {id:teachers.length+1, ...data}]);
+      setFormData({name:'',email:'',phone:'',department:'',subjects:'',qualifications:'',experience:0});
+      setShowForm(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="card">
-      <div className="card-header"><div className="card-title">Faculty Members</div><span className="chip badge-blue">{teachers.length} active</span></div>
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Department</th><th>Subjects</th><th>Experience</th><th>Students</th><th>Email</th></tr></thead>
-          <tbody>
-            {teachers.map(t=>(
-              <tr key={t.id}>
-                <td>
-                  <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <div className="avatar" style={{width:34,height:34,background:'var(--purple-bg)',color:'var(--purple)',fontSize:13}}>{t.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
-                    <span style={{fontWeight:500}}>{t.name}</span>
-                  </div>
-                </td>
-                <td><span className="chip badge-purple">{t.dept}</span></td>
-                <td style={{fontSize:13,color:'var(--text2)',maxWidth:200}}>{t.subjects}</td>
-                <td>{t.exp}</td>
-                <td style={{fontWeight:600}}>{t.students}</td>
-                <td style={{color:'var(--text3)',fontSize:13}}>{t.email}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div>
+      {showForm && (
+        <div className="card" style={{marginBottom:20}}>
+          <div className="card-header"><div className="card-title">Add New Teacher</div></div>
+          {error && <div style={{padding:'12px',background:'var(--red-bg)',color:'var(--red)',borderRadius:'8px',marginBottom:'16px',fontSize:'14px'}}>{error}</div>}
+          <form onSubmit={handleAddTeacher}>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Full Name *</label>
+                <input className="form-input" type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Prof. Name" required/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email *</label>
+                <input className="form-input" type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="teacher@edu.com" required/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Phone</label>
+                <input className="form-input" type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="+91 XXXXX XXXXX"/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Department *</label>
+                <select className="form-input" name="department" value={formData.department} onChange={handleInputChange} required>
+                  <option value="">Select Department</option>
+                  <option value="CS">Computer Science</option>
+                  <option value="IT">Information Technology</option>
+                  <option value="ME">Mechanical Engineering</option>
+                  <option value="CE">Civil Engineering</option>
+                  <option value="EE">Electrical Engineering</option>
+                  <option value="EC">Electronics & Communication</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Subjects (comma separated)</label>
+                <input className="form-input" type="text" name="subjects" value={formData.subjects} onChange={handleInputChange} placeholder="Data Structures, Algorithms, DBMS"/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Experience (years)</label>
+                <input className="form-input" type="number" name="experience" value={formData.experience} onChange={handleInputChange} placeholder="0" min="0"/>
+              </div>
+              <div className="form-group" style={{gridColumn:'1/-1'}}>
+                <label className="form-label">Qualifications</label>
+                <input className="form-input" type="text" name="qualifications" value={formData.qualifications} onChange={handleInputChange} placeholder="B.Tech, M.Tech, PhD"/>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:10,marginTop:16}}>
+              <button type="submit" className="btn btn-primary" disabled={loading}>{loading?'Adding...':'Add Teacher'}</button>
+              <button type="button" className="btn btn-secondary" onClick={()=>setShowForm(false)} disabled={loading}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">Faculty Members</div>
+          <button className="btn btn-primary btn-sm" onClick={()=>setShowForm(!showForm)}>+ {showForm?'Hide':'Add Teacher'}</button>
+        </div>
+        {teachers.length === 0 ? (
+          <div style={{padding:'32px',textAlign:'center',color:'var(--text3)'}}>No teachers found. Click "Add Teacher" to create new faculty.</div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Department</th><th>Subjects</th><th>Experience</th><th>Email</th><th style={{width:80}}>Action</th></tr></thead>
+              <tbody>
+                {teachers.map((t,idx)=>(
+                  <tr key={t.id}>
+                    <td>
+                      <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <div className="avatar" style={{width:34,height:34,background:'var(--purple-bg)',color:'var(--purple)',fontSize:13}}>{t.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+                        <span style={{fontWeight:500}}>{t.name}</span>
+                      </div>
+                    </td>
+                    <td><span className="chip badge-purple">{t.department}</span></td>
+                    <td style={{fontSize:13,color:'var(--text2)',maxWidth:200}}>{Array.isArray(t.subjects)?t.subjects.join(', '):t.subjects}</td>
+                    <td>{t.experience} yrs</td>
+                    <td style={{color:'var(--text3)',fontSize:13}}>{t.email}</td>
+                    <td><button className="btn btn-danger btn-sm" onClick={()=>setTeachers(prev=>prev.filter((_, i)=>i!==idx))}>Delete</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
