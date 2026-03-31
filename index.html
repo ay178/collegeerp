@@ -7,6 +7,8 @@
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -224,7 +226,23 @@
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
     .grid-2 { grid-template-columns: 1fr; }
     .grid-3 { grid-template-columns: 1fr; }
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s; z-index: 200; }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0 !important; }
+    .topbar { padding: 12px 16px; }
+    .content-area { padding: 16px; }
+    .mobile-menu-btn { display: flex !important; }
+    .mobile-overlay { display: block !important; }
   }
+  @media (max-width: 500px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 22px; }
+    .login-card { padding: 24px 18px; width: 95vw; }
+    .modal { width: 95vw !important; }
+    .topbar-date { display: none; }
+  }
+  .mobile-menu-btn { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; }
+  .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 150; }
 </style>
 </head>
 <body>
@@ -234,6 +252,23 @@
 const { useState, useEffect, useCallback } = React;
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
+// ─── Backend API URL ─────────────────────────────────────────────────────────
+const API_URL = 'https://college-erp-hf1g.onrender.com';
+
+// ─── API Helper ───────────────────────────────────────────────────────────────
+const api = async (endpoint, method = 'GET', body = null, token = null) => {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API_URL + endpoint, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Something went wrong');
+  return data;
+};
+
 const USERS = [
   { id: 1, email: 'admin@edu.com', password: 'admin123', role: 'admin', name: 'Dr. Ramesh Kumar', dept: 'Administration' },
   { id: 2, email: 'teacher@edu.com', password: 'teach123', role: 'teacher', name: 'Prof. Anjali Singh', dept: 'Computer Science', subjects: ['Data Structures', 'Algorithms', 'DBMS'] },
@@ -321,10 +356,24 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    const user = USERS.find(u => u.email === email && u.password === password && u.role === role);
-    if (user) { onLogin(user); }
-    else { setError('Invalid credentials. Please try again.'); }
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) { setError('Email aur password dono bharо!'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const data = await api('/api/auth/login', 'POST', { email, password, role });
+      localStorage.setItem('erp_token', data.token);
+      onLogin({ ...data.user, token: data.token });
+    } catch (err) {
+      // Fallback to demo users if backend fails
+      const user = USERS.find(u => u.email === email && u.password === password && u.role === role);
+      if (user) { onLogin(user); }
+      else { setError(err.message || 'Invalid credentials. Please try again.'); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fillDemo = (r) => {
@@ -361,7 +410,7 @@ function LoginScreen({ onLogin }) {
           <input className="form-input" type="password" placeholder="Enter your password" value={password} onChange={e=>{setPassword(e.target.value);setError('');}} onKeyDown={e=>e.key==='Enter'&&handleLogin()} />
         </div>
         {error && <div style={{color:'var(--red)',fontSize:13,marginBottom:8}}>{error}</div>}
-        <button className="login-btn" onClick={handleLogin}>Sign In →</button>
+        <button className="login-btn" onClick={handleLogin} disabled={loading}>{loading ? "Logging in..." : "Sign In →"}</button>
 
         <div className="demo-creds">
           <div className="demo-title">Demo Accounts</div>
@@ -382,28 +431,34 @@ function LoginScreen({ onLogin }) {
 }
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
-function Sidebar({ user, activeView, setActiveView, onLogout }) {
+function Sidebar({ user, activeView, setActiveView, onLogout, isOpen }) {
   const studentNav = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { id: 'attendance', label: 'My Attendance', icon: 'attendance' },
-    { id: 'marks', label: 'My Marks', icon: 'marks' },
-    { id: 'timetable', label: 'Timetable', icon: 'schedule' },
-    { id: 'notifications', label: 'Notifications', icon: 'bell' },
+    { id: 'dashboard',     label: 'Dashboard',      icon: 'dashboard'  },
+    { id: 'attendance',    label: 'My Attendance',   icon: 'attendance' },
+    { id: 'marks',         label: 'My Marks',        icon: 'marks'      },
+    { id: 'timetable',     label: 'Timetable',       icon: 'schedule'   },
+    { id: 'exam-schedule', label: 'Exam Schedule',   icon: 'schedule'   },
+    { id: 'fee',           label: 'Fee Details',     icon: 'award'      },
+    { id: 'notifications', label: 'Notifications',   icon: 'bell'       },
   ];
   const teacherNav = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { id: 'dashboard',        label: 'Dashboard',        icon: 'dashboard'  },
     { id: 'class-attendance', label: 'Class Attendance', icon: 'attendance' },
-    { id: 'marks-entry', label: 'Marks Entry', icon: 'marks' },
-    { id: 'timetable', label: 'Timetable', icon: 'schedule' },
-    { id: 'notifications', label: 'Notifications', icon: 'bell' },
+    { id: 'marks-entry',      label: 'Marks Entry',      icon: 'marks'      },
+    { id: 'timetable',        label: 'Timetable',        icon: 'schedule'   },
+    { id: 'exam-schedule',    label: 'Exam Schedule',    icon: 'schedule'   },
+    { id: 'notifications',    label: 'Notifications',    icon: 'bell'       },
   ];
   const adminNav = [
-    { id: 'dashboard', label: 'Dashboard',        icon: 'dashboard' },
-    { id: 'branches', label: 'Branch Management', icon: 'bar'       },
-    { id: 'students', label: 'All Students',       icon: 'users'     },
-    { id: 'teachers', label: 'All Teachers',       icon: 'teacher'   },
-    { id: 'reports',  label: 'Reports',            icon: 'marks'     },
-    { id: 'settings', label: 'Settings',           icon: 'settings'  },
+    { id: 'dashboard',     label: 'Dashboard',        icon: 'dashboard' },
+    { id: 'branches',      label: 'Branch Management',icon: 'bar'       },
+    { id: 'students',      label: 'All Students',     icon: 'users'     },
+    { id: 'teachers',      label: 'All Teachers',     icon: 'teacher'   },
+    { id: 'fee-mgmt',      label: 'Fee Management',   icon: 'award'     },
+    { id: 'exam-schedule', label: 'Exam Schedule',    icon: 'schedule'  },
+    { id: 'analytics',     label: 'Analytics',        icon: 'bar'       },
+    { id: 'reports',       label: 'Reports',          icon: 'marks'     },
+    { id: 'settings',      label: 'Settings',         icon: 'settings'  },
   ];
   const navItems = user.role==='student' ? studentNav : user.role==='teacher' ? teacherNav : adminNav;
   const avatarColors = { student: ['#eff6ff','#2563eb'], teacher: ['#f5f3ff','#7c3aed'], admin: ['#f0fdf4','#16a34a'] };
@@ -411,7 +466,7 @@ function Sidebar({ user, activeView, setActiveView, onLogout }) {
   const initials = user.name.split(' ').map(n=>n[0]).join('').slice(0,2);
 
   return (
-    <div className="sidebar">
+    <div className={isOpen ? "sidebar open" : "sidebar"}>
       <div className="sidebar-logo">
         <div className="logo-mark">E</div>
         <div className="logo-text">Edu<span>ERP</span></div>
@@ -910,20 +965,59 @@ function TimetablePage() {
 
 // ─── Notifications Page ───────────────────────────────────────────────────────
 function NotificationsPage() {
-  const dotColors = {'info':'var(--accent)','success':'var(--green)','warn':'var(--amber)'};
+  const { permission, requestPermission, notifs, markRead, markAllRead, unreadCount } = usePushNotifications();
   return (
-    <div className="card">
-      <div className="card-header"><div className="card-title">Notifications</div><span className="chip badge-red">{NOTIFICATIONS.filter(n=>!n.read).length} unread</span></div>
-      {NOTIFICATIONS.map(n=>(
-        <div key={n.id} className="notif-item" style={{opacity:n.read?0.6:1}}>
-          <div className="notif-dot" style={{background:dotColors[n.type]||'var(--text3)'}}/>
-          <div style={{flex:1}}>
-            <div style={{fontSize:14,color:'var(--text)',fontWeight:n.read?400:500}}>{n.text}</div>
-            <div style={{fontSize:12,color:'var(--text3)',marginTop:3}}>{n.time}</div>
+    <div>
+      {/* Push Notification Enable Card */}
+      <div className="card" style={{marginBottom:20,background:permission==='granted'?'var(--green-bg)':'var(--amber-bg)',
+        border:permission==='granted'?'1px solid #bbf7d0':'1px solid #fcd34d'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:24}}>🔔</span>
+            <div>
+              <div style={{fontWeight:600,color:permission==='granted'?'var(--green)':'var(--amber)'}}>
+                {permission==='granted' ? '✅ Push Notifications ON hain!' : '⚡ Push Notifications Enable Karo'}
+              </div>
+              <div style={{fontSize:13,color:permission==='granted'?'var(--green)':'var(--amber)',marginTop:2}}>
+                {permission==='granted' ? 'Aapko real-time alerts milenge' : 'Exam, fee, attendance ke alerts milenge'}
+              </div>
+            </div>
           </div>
-          {!n.read && <span className="chip badge-blue" style={{fontSize:11}}>New</span>}
+          {permission !== 'granted' && (
+            <button className="btn btn-primary" onClick={requestPermission}>
+              🔔 Enable Karo
+            </button>
+          )}
         </div>
-      ))}
+      </div>
+
+      {/* Notifications */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Notifications</div>
+            <div className="card-subtitle">{unreadCount} unread</div>
+          </div>
+          {unreadCount > 0 && (
+            <button className="btn btn-secondary btn-sm" onClick={markAllRead}>
+              ✓ Sab Read Karo
+            </button>
+          )}
+        </div>
+        {notifs.map(n=>(
+          <div key={n.id} onClick={()=>markRead(n.id)} className="notif-item"
+            style={{opacity:n.read?0.6:1,cursor:'pointer',padding:'14px 4px'}}>
+            <div style={{width:10,height:10,borderRadius:'50%',marginTop:4,flexShrink:0,
+              background:n.read?'var(--border2)':'var(--accent)'}}/>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:n.read?400:600,color:'var(--text)'}}>{n.title}</div>
+              <div style={{fontSize:13,color:'var(--text2)',marginTop:2}}>{n.body}</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>{n.time}</div>
+            </div>
+            {!n.read && <span className="chip badge-blue" style={{fontSize:11}}>New</span>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1024,6 +1118,7 @@ function ClassAttendancePage() {
     Object.keys(attendance).forEach(id => upd[id] = status);
     setAttendance(upd);
   };
+
   const saveLecture = () => {
     if (!activeLecture) return;
     const key = `${selectedDate}_${activeLecture.subject}_${activeLecture.div}`;
@@ -2120,7 +2215,7 @@ function BranchManagementPage() {
           {students.length === 0 ? (
             <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
               <div style={{fontSize:32,marginBottom:10}}>👨‍🎓</div>
-              <div style={{fontSize:14,fontWeight:500}}> No student found </div>
+              <div style={{fontSize:14,fontWeight:500}}>Koi student nahi mila</div>
               <div style={{fontSize:13,marginTop:4}}>Upar "Add Student" button click karo</div>
             </div>
           ) : (
@@ -2348,44 +2443,659 @@ function BranchManagementPage() {
   );
 }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// 📊 ANALYTICS PAGE — Charts & Graphs
+// ═══════════════════════════════════════════════════════════════════
+function AnalyticsPage() {
+  const { useEffect, useRef } = React;
+  const attChartRef  = useRef(null);
+  const marksChartRef = useRef(null);
+  const branchChartRef = useRef(null);
+  const trendChartRef = useRef(null);
+  const charts = useRef({});
+
+  useEffect(() => {
+    // Destroy old charts
+    Object.values(charts.current).forEach(c => { try { c.destroy(); } catch(e){} });
+    charts.current = {};
+
+    // Chart 1: Attendance by Subject
+    if (attChartRef.current) {
+      charts.current.att = new Chart(attChartRef.current, {
+        type: 'bar',
+        data: {
+          labels: ['Data Structures','Algorithms','DBMS','Computer Networks','OS'],
+          datasets: [{
+            label: 'Attendance %',
+            data: [84, 83, 92, 68, 89],
+            backgroundColor: ['#3b82f6','#7c3aed','#16a34a','#dc2626','#d97706'],
+            borderRadius: 6,
+          }]
+        },
+        options: { responsive:true, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true, max:100 } } }
+      });
+    }
+
+    // Chart 2: Marks Distribution
+    if (marksChartRef.current) {
+      charts.current.marks = new Chart(marksChartRef.current, {
+        type: 'doughnut',
+        data: {
+          labels: ['A+ (80-100)','A (70-79)','B (50-69)','C (40-49)','F (<40)'],
+          datasets: [{
+            data: [12, 28, 35, 15, 10],
+            backgroundColor: ['#16a34a','#2563eb','#d97706','#7c3aed','#dc2626'],
+          }]
+        },
+        options: { responsive:true, plugins:{ legend:{ position:'bottom' } } }
+      });
+    }
+
+    // Chart 3: Branch-wise Students
+    if (branchChartRef.current) {
+      charts.current.branch = new Chart(branchChartRef.current, {
+        type: 'bar',
+        data: {
+          labels: ['CS','IT','ME','CE','EE','EC'],
+          datasets: [{
+            label: 'Students',
+            data: [320, 280, 220, 180, 140, 160],
+            backgroundColor: '#2563eb',
+            borderRadius: 6,
+          }]
+        },
+        options: { responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true } } }
+      });
+    }
+
+    // Chart 4: Monthly Attendance Trend
+    if (trendChartRef.current) {
+      charts.current.trend = new Chart(trendChartRef.current, {
+        type: 'line',
+        data: {
+          labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+          datasets: [{
+            label: 'Avg Attendance %',
+            data: [82,79,85,88,76,0,0,80,84,87,83,85],
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37,99,235,0.1)',
+            tension: 0.4,
+            fill: true,
+          }]
+        },
+        options: { responsive:true, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:false, min:60, max:100 } } }
+      });
+    }
+
+    return () => { Object.values(charts.current).forEach(c => { try { c.destroy(); } catch(e){} }); };
+  }, []);
+
+  return (
+    <div>
+      {/* Stats */}
+      <div className="stats-grid" style={{marginBottom:24}}>
+        {[
+          {label:'Total Students',  value:'1,240', badge:'badge-blue',   sub:'All branches'},
+          {label:'Avg Attendance',  value:'78%',   badge:'badge-green',  sub:'This semester'},
+          {label:'Pass Rate',       value:'91%',   badge:'badge-purple', sub:'Last exam'},
+          {label:'Fee Collection',  value:'87%',   badge:'badge-amber',  sub:'This year'},
+        ].map(s=>(
+          <div key={s.label} className="stat-card">
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value">{s.value}</div>
+            <div className="stat-sub"><span className={"stat-badge "+s.badge}>{s.sub}</span></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid-2" style={{marginBottom:20}}>
+        {/* Attendance Chart */}
+        <div className="card">
+          <div className="card-header"><div className="card-title">📊 Subject-wise Attendance %</div></div>
+          <canvas ref={attChartRef} height={200}/>
+        </div>
+        {/* Marks Distribution */}
+        <div className="card">
+          <div className="card-header"><div className="card-title">🎯 Marks Grade Distribution</div></div>
+          <canvas ref={marksChartRef} height={200}/>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        {/* Branch Students */}
+        <div className="card">
+          <div className="card-header"><div className="card-title">🏫 Branch-wise Students</div></div>
+          <canvas ref={branchChartRef} height={200}/>
+        </div>
+        {/* Trend */}
+        <div className="card">
+          <div className="card-header"><div className="card-title">📈 Monthly Attendance Trend</div></div>
+          <canvas ref={trendChartRef} height={200}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 💳 FEE MANAGEMENT — Admin Page
+// ═══════════════════════════════════════════════════════════════════
+const FEE_DATA_INIT = [
+  {id:1, name:'Arjun Mehta',    rollNo:'CS2023001', branch:'CS', sem:'4th', total:85000, paid:85000, due:0,     dueDate:'2025-03-31', status:'paid'},
+  {id:2, name:'Priya Sharma',   rollNo:'CS2023002', branch:'CS', sem:'4th', total:85000, paid:60000, due:25000, dueDate:'2025-03-31', status:'partial'},
+  {id:3, name:'Rahul Verma',    rollNo:'CS2023003', branch:'CS', sem:'4th', total:85000, paid:0,     due:85000, dueDate:'2025-03-31', status:'unpaid'},
+  {id:4, name:'Sneha Patel',    rollNo:'CS2023004', branch:'CS', sem:'4th', total:85000, paid:85000, due:0,     dueDate:'2025-03-31', status:'paid'},
+  {id:5, name:'Kavya Nair',     rollNo:'IT2023001', branch:'IT', sem:'2nd', total:80000, paid:40000, due:40000, dueDate:'2025-04-15', status:'partial'},
+  {id:6, name:'Rohan Das',      rollNo:'IT2023002', branch:'IT', sem:'2nd', total:80000, paid:80000, due:0,     dueDate:'2025-04-15', status:'paid'},
+  {id:7, name:'Ananya Iyer',    rollNo:'ME2023001', branch:'ME', sem:'6th', total:75000, paid:0,     due:75000, dueDate:'2025-03-15', status:'overdue'},
+  {id:8, name:'Vikram Rao',     rollNo:'CS2023005', branch:'CS', sem:'4th', total:85000, paid:85000, due:0,     dueDate:'2025-03-31', status:'paid'},
+];
+
+function FeeMgmtPage() {
+  const [fees, setFees]         = useState(FEE_DATA_INIT);
+  const [search, setSearch]     = useState('');
+  const [filter, setFilter]     = useState('all');
+  const [modal, setModal]       = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [payAmt, setPayAmt]     = useState('');
+  const [toast, setToast]       = useState('');
+  const [emailStatus, setEmailStatus] = useState('');
+
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3000); };
+
+  const totalFee     = fees.reduce((a,b)=>a+b.total,0);
+  const totalPaid    = fees.reduce((a,b)=>a+b.paid,0);
+  const totalDue     = fees.reduce((a,b)=>a+b.due,0);
+  const paidCount    = fees.filter(f=>f.status==='paid').length;
+  const overdueCount = fees.filter(f=>f.status==='overdue').length;
+
+  const filtered = fees.filter(f => {
+    const matchSearch = f.name.toLowerCase().includes(search.toLowerCase()) || f.rollNo.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter==='all' || f.status===filter;
+    return matchSearch && matchFilter;
+  });
+
+  const recordPayment = () => {
+    if (!payAmt || isNaN(payAmt)) return alert('Valid amount dalo!');
+    const amount = parseInt(payAmt);
+    setFees(prev => prev.map(f => {
+      if (f.id !== selected.id) return f;
+      const newPaid = Math.min(f.paid + amount, f.total);
+      const newDue  = f.total - newPaid;
+      const newStatus = newDue === 0 ? 'paid' : newPaid > 0 ? 'partial' : 'unpaid';
+      return { ...f, paid: newPaid, due: newDue, status: newStatus };
+    }));
+    showToast('✅ Payment recorded — Rs.' + amount.toLocaleString());
+    setModal(null); setPayAmt('');
+  };
+
+  const sendReminder = (student) => {
+    setEmailStatus('sending');
+    setTimeout(() => {
+      setEmailStatus('');
+      showToast('📧 Reminder email bhej diya — ' + student.name + ' ko!');
+    }, 1500);
+  };
+
+  const statusColor = {
+    paid:    {bg:'var(--green-bg)',  color:'var(--green)',  label:'✅ Paid'},
+    partial: {bg:'var(--amber-bg)', color:'var(--amber)', label:'⚡ Partial'},
+    unpaid:  {bg:'var(--red-bg)',   color:'var(--red)',   label:'❌ Unpaid'},
+    overdue: {bg:'var(--red-bg)',   color:'var(--red)',   label:'⚠️ Overdue'},
+  };
+
+  return (
+    <div>
+      {toast && (
+        <div style={{position:'fixed',top:20,right:20,zIndex:999,background:'var(--text)',color:'var(--surface)',
+          padding:'12px 20px',borderRadius:10,fontSize:14,fontWeight:500,boxShadow:'0 4px 16px rgba(0,0,0,0.18)'}}>
+          {toast}
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="stats-grid" style={{marginBottom:20}}>
+        <div className="stat-card">
+          <div className="stat-label">Total Fee</div>
+          <div className="stat-value" style={{fontSize:22}}>{'Rs.'+totalFee.toLocaleString()}</div>
+          <div className="stat-sub" style={{color:'var(--text3)'}}>This semester</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Collected</div>
+          <div className="stat-value" style={{fontSize:22,color:'var(--green)'}}>{'Rs.'+totalPaid.toLocaleString()}</div>
+          <div className="stat-sub"><span className="stat-badge badge-green">{Math.round(totalPaid/totalFee*100)}% collected</span></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Pending</div>
+          <div className="stat-value" style={{fontSize:22,color:'var(--red)'}}>{'Rs.'+totalDue.toLocaleString()}</div>
+          <div className="stat-sub"><span className="stat-badge badge-red">{overdueCount} overdue</span></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Fully Paid</div>
+          <div className="stat-value" style={{color:'var(--green)'}}>{paidCount}</div>
+          <div className="stat-sub"><span className="stat-badge badge-green">out of {fees.length}</span></div>
+        </div>
+      </div>
+
+      {/* Filter + Search */}
+      <div style={{display:'flex',gap:12,marginBottom:20,flexWrap:'wrap'}}>
+        <div style={{position:'relative',flex:1,minWidth:200}}>
+          <div style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',opacity:0.4}}><Icon name="search" size={14}/></div>
+          <input className="form-input" style={{paddingLeft:34}} placeholder="Student naam ya roll no..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        </div>
+        <select className="form-input" style={{width:160}} value={filter} onChange={e=>setFilter(e.target.value)}>
+          <option value="all">All Students</option>
+          <option value="paid">Paid</option>
+          <option value="partial">Partial</option>
+          <option value="unpaid">Unpaid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+
+      {/* Table */}
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">Fee Records</div>
+          <span className="chip badge-blue">{filtered.length} students</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Student</th><th>Branch</th><th>Total Fee</th><th>Paid</th><th>Due</th><th>Due Date</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {filtered.map(f => {
+                const s = statusColor[f.status] || statusColor.unpaid;
+                return (
+                  <tr key={f.id}>
+                    <td>
+                      <div style={{fontWeight:500}}>{f.name}</div>
+                      <div style={{fontSize:12,color:'var(--text3)',fontFamily:'DM Mono'}}>{f.rollNo}</div>
+                    </td>
+                    <td><span className="chip badge-blue">{f.branch}</span></td>
+                    <td style={{fontFamily:'DM Mono'}}>{'Rs.'+f.total.toLocaleString()}</td>
+                    <td style={{fontFamily:'DM Mono',color:'var(--green)',fontWeight:600}}>{'Rs.'+f.paid.toLocaleString()}</td>
+                    <td style={{fontFamily:'DM Mono',color:f.due>0?'var(--red)':'var(--text3)',fontWeight:f.due>0?600:400}}>
+                      {f.due>0?'Rs.'+f.due.toLocaleString():'—'}
+                    </td>
+                    <td style={{fontSize:13}}>{f.dueDate}</td>
+                    <td><span className="chip" style={{background:s.bg,color:s.color}}>{s.label}</span></td>
+                    <td>
+                      <div style={{display:'flex',gap:6}}>
+                        {f.due > 0 && (
+                          <button className="btn btn-primary btn-sm" onClick={()=>{setSelected(f);setModal('pay');}}>
+                            💰 Pay
+                          </button>
+                        )}
+                        <button className="btn btn-secondary btn-sm" onClick={()=>sendReminder(f)} title="Send Email Reminder">
+                          📧
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Payment Modal */}
+      {modal==='pay' && selected && (
+        <div className="modal-overlay" onClick={()=>setModal(null)}>
+          <div className="modal" style={{width:400}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <div className="modal-title" style={{margin:0}}>💰 Payment Record Karo</div>
+              <button onClick={()=>setModal(null)} style={{border:'none',background:'none',cursor:'pointer'}}><Icon name="close" size={18}/></button>
+            </div>
+            <div style={{background:'var(--bg)',borderRadius:9,padding:'14px 16px',marginBottom:16}}>
+              <div style={{fontWeight:600,marginBottom:4}}>{selected.name}</div>
+              <div style={{fontSize:13,color:'var(--text3)'}}>{selected.rollNo} · {selected.branch}</div>
+              <div style={{display:'flex',gap:20,marginTop:10,fontSize:13}}>
+                <div><div style={{color:'var(--text3)'}}>Total</div><div style={{fontWeight:600}}>Rs.{selected.total.toLocaleString()}</div></div>
+                <div><div style={{color:'var(--text3)'}}>Paid</div><div style={{fontWeight:600,color:'var(--green)'}}>Rs.{selected.paid.toLocaleString()}</div></div>
+                <div><div style={{color:'var(--text3)'}}>Due</div><div style={{fontWeight:600,color:'var(--red)'}}>Rs.{selected.due.toLocaleString()}</div></div>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Amount (Rs.) *</label>
+              <input className="form-input" type="number" placeholder={'Max: Rs.'+selected.due.toLocaleString()} value={payAmt} onChange={e=>setPayAmt(e.target.value)}/>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setModal(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={recordPayment}>✅ Record Payment</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 💳 FEE DETAILS — Student View
+// ═══════════════════════════════════════════════════════════════════
+function FeeDetailsPage({ user }) {
+  const myFee = FEE_DATA_INIT.find(f => f.rollNo === 'CS2023001') || FEE_DATA_INIT[0];
+  const pct = Math.round(myFee.paid / myFee.total * 100);
+  return (
+    <div>
+      <div className="grid-2" style={{marginBottom:20}}>
+        <div className="card">
+          <div className="card-header"><div className="card-title">💳 Fee Summary</div></div>
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            {[
+              {label:'Total Fee',   value:'Rs.'+myFee.total.toLocaleString(), color:'var(--text)'},
+              {label:'Amount Paid', value:'Rs.'+myFee.paid.toLocaleString(),  color:'var(--green)'},
+              {label:'Amount Due',  value:myFee.due>0?'Rs.'+myFee.due.toLocaleString():'Nil', color:myFee.due>0?'var(--red)':'var(--green)'},
+              {label:'Due Date',    value:myFee.dueDate, color:'var(--text)'},
+            ].map(item=>(
+              <div key={item.label} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid var(--border)'}}>
+                <span style={{fontSize:14,color:'var(--text2)'}}>{item.label}</span>
+                <span style={{fontSize:14,fontWeight:600,color:item.color}}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:16}}>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+              <span style={{fontSize:13,color:'var(--text3)'}}>Payment Progress</span>
+              <span style={{fontSize:13,fontWeight:600,color:pct===100?'var(--green)':'var(--amber)'}}>{pct}%</span>
+            </div>
+            <div className="progress-bar" style={{height:10}}>
+              <div className="progress-fill" style={{width:pct+'%',background:pct===100?'var(--green)':'var(--amber)'}}/>
+            </div>
+          </div>
+          {myFee.status==='paid' ? (
+            <div style={{marginTop:14,padding:'10px 14px',background:'var(--green-bg)',borderRadius:8,color:'var(--green)',fontWeight:600,fontSize:14}}>
+              🎉 Aapki puri fee jama ho gayi hai!
+            </div>
+          ) : (
+            <div style={{marginTop:14,padding:'10px 14px',background:'var(--amber-bg)',borderRadius:8,color:'var(--amber)',fontWeight:600,fontSize:14}}>
+              ⚠️ Rs.{myFee.due.toLocaleString()} abhi baki hai — jaldi jama karo!
+            </div>
+          )}
+        </div>
+        <div className="card">
+          <div className="card-header"><div className="card-title">📋 Payment History</div></div>
+          {[
+            {date:'2025-01-10', amount:42500, mode:'Online', receipt:'RCP001'},
+            {date:'2025-02-15', amount:42500, mode:'Cash',   receipt:'RCP002'},
+          ].map((p,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:14,padding:'12px 0',borderBottom:'1px solid var(--border)'}}>
+              <div style={{width:36,height:36,borderRadius:9,background:'var(--green-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>
+                💰
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:500}}>Rs.{p.amount.toLocaleString()}</div>
+                <div style={{fontSize:12,color:'var(--text3)'}}>{p.date} · {p.mode} · {p.receipt}</div>
+              </div>
+              <span className="chip badge-green">✅ Paid</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 📅 EXAM SCHEDULE — All Users
+// ═══════════════════════════════════════════════════════════════════
+const EXAMS = [
+  {id:1, subject:'Data Structures',   date:'2025-04-10', time:'10:00 AM', duration:'3 hrs', room:'Hall A', type:'Mid Sem',  status:'upcoming'},
+  {id:2, subject:'Algorithms',        date:'2025-04-12', time:'10:00 AM', duration:'3 hrs', room:'Hall B', type:'Mid Sem',  status:'upcoming'},
+  {id:3, subject:'DBMS',              date:'2025-04-14', time:'2:00 PM',  duration:'3 hrs', room:'Hall A', type:'Mid Sem',  status:'upcoming'},
+  {id:4, subject:'Computer Networks', date:'2025-04-16', time:'10:00 AM', duration:'3 hrs', room:'Hall C', type:'Mid Sem',  status:'upcoming'},
+  {id:5, subject:'Operating Systems', date:'2025-04-18', time:'2:00 PM',  duration:'3 hrs', room:'Hall B', type:'Mid Sem',  status:'upcoming'},
+  {id:6, subject:'Data Structures',   date:'2025-05-20', time:'10:00 AM', duration:'3 hrs', room:'Hall A', type:'End Sem',  status:'upcoming'},
+  {id:7, subject:'Algorithms',        date:'2025-05-22', time:'10:00 AM', duration:'3 hrs', room:'Hall B', type:'End Sem',  status:'upcoming'},
+  {id:8, subject:'DBMS',              date:'2025-05-24', time:'2:00 PM',  duration:'3 hrs', room:'Hall A', type:'End Sem',  status:'upcoming'},
+  {id:9, subject:'Computer Networks', date:'2025-05-26', time:'10:00 AM', duration:'3 hrs', room:'Hall C', type:'End Sem',  status:'upcoming'},
+  {id:10,subject:'Operating Systems', date:'2025-05-28', time:'2:00 PM',  duration:'3 hrs', room:'Hall B', type:'End Sem',  status:'upcoming'},
+];
+
+function ExamSchedulePage() {
+  const [filter, setFilter]       = useState('all');
+  const [modal, setModal]         = useState(false);
+  const [exams, setExams]         = useState(EXAMS);
+  const [form, setForm]           = useState({subject:'',date:'',time:'10:00 AM',duration:'3 hrs',room:'Hall A',type:'Mid Sem'});
+  const [toast, setToast]         = useState('');
+  const { useState: useStateInner } = React;
+
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3000); };
+
+  const filtered = filter==='all' ? exams : exams.filter(e=>e.type===filter);
+
+  const daysLeft = (dateStr) => {
+    const diff = new Date(dateStr) - new Date();
+    const days = Math.ceil(diff / (1000*60*60*24));
+    return days;
+  };
+
+  const addExam = () => {
+    if (!form.subject || !form.date) return alert('Subject aur date required!');
+    setExams(p=>[...p,{...form,id:Date.now(),status:'upcoming'}]);
+    showToast('✅ Exam schedule add ho gaya!');
+    setModal(false);
+    setForm({subject:'',date:'',time:'10:00 AM',duration:'3 hrs',room:'Hall A',type:'Mid Sem'});
+  };
+
+  return (
+    <div>
+      {toast && (
+        <div style={{position:'fixed',top:20,right:20,zIndex:999,background:'var(--text)',color:'var(--surface)',
+          padding:'12px 20px',borderRadius:10,fontSize:14,fontWeight:500,boxShadow:'0 4px 16px rgba(0,0,0,0.18)'}}>
+          {toast}
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{display:'flex',gap:12,marginBottom:20,alignItems:'center',flexWrap:'wrap'}}>
+        <div style={{display:'flex',gap:3,background:'var(--surface2)',borderRadius:10,padding:3}}>
+          {['all','Mid Sem','End Sem'].map(f=>(
+            <button key={f} onClick={()=>setFilter(f)}
+              style={{padding:'7px 14px',borderRadius:8,border:'none',cursor:'pointer',fontSize:13,fontWeight:500,
+                background:filter===f?'var(--surface)':'transparent',
+                color:filter===f?'var(--text)':'var(--text3)',transition:'all 0.15s'}}>
+              {f==='all'?'All Exams':f}
+            </button>
+          ))}
+        </div>
+        <div style={{flex:1}}/>
+        <button className="btn btn-primary" onClick={()=>setModal(true)}>
+          <Icon name="plus" size={15} color="white"/> Add Exam
+        </button>
+      </div>
+
+      {/* Upcoming Alert */}
+      {exams.filter(e=>daysLeft(e.date)<=7&&daysLeft(e.date)>0).length>0 && (
+        <div style={{background:'var(--amber-bg)',border:'1px solid #fcd34d',borderRadius:10,padding:'12px 16px',marginBottom:20,display:'flex',gap:12,alignItems:'center'}}>
+          <span style={{fontSize:20}}>⚠️</span>
+          <div>
+            <div style={{fontWeight:600,color:'var(--amber)'}}>Exam Alert!</div>
+            <div style={{fontSize:13,color:'var(--amber)'}}>
+              {exams.filter(e=>daysLeft(e.date)<=7&&daysLeft(e.date)>0).length} exams agle 7 dinon mein hain — taiyari karo!
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Exam Cards */}
+      <div style={{display:'flex',flexDirection:'column',gap:12}}>
+        {filtered.map(exam => {
+          const days = daysLeft(exam.date);
+          const isClose = days <= 7 && days > 0;
+          const isPast  = days < 0;
+          return (
+            <div key={exam.id} className="card" style={{padding:'16px 20px',
+              border: isClose?'1.5px solid #fcd34d':isPast?'1px solid var(--border)':'1px solid var(--border)',
+              opacity: isPast ? 0.6 : 1}}>
+              <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
+                {/* Date Box */}
+                <div style={{width:56,height:56,borderRadius:12,background:isPast?'var(--surface2)':isClose?'var(--amber-bg)':'var(--accent-bg)',
+                  display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <div style={{fontSize:18,fontWeight:800,color:isPast?'var(--text3)':isClose?'var(--amber)':'var(--accent)',lineHeight:1}}>
+                    {new Date(exam.date).getDate()}
+                  </div>
+                  <div style={{fontSize:10,fontWeight:600,color:isPast?'var(--text3)':isClose?'var(--amber)':'var(--accent)'}}>
+                    {new Date(exam.date).toLocaleString('default',{month:'short'}).toUpperCase()}
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
+                    <span style={{fontSize:15,fontWeight:700,color:'var(--text)'}}>{exam.subject}</span>
+                    <span className={`chip ${exam.type==='Mid Sem'?'badge-purple':'badge-blue'}`} style={{fontSize:11}}>{exam.type}</span>
+                    {isClose && <span className="chip badge-amber" style={{fontSize:11}}>⚡ {days} din baaki!</span>}
+                    {isPast  && <span className="chip" style={{background:'var(--surface2)',color:'var(--text3)',fontSize:11}}>Completed</span>}
+                  </div>
+                  <div style={{display:'flex',gap:16,fontSize:13,color:'var(--text3)',flexWrap:'wrap'}}>
+                    <span>📅 {exam.date}</span>
+                    <span>⏰ {exam.time}</span>
+                    <span>⏱ {exam.duration}</span>
+                    <span>🏛 {exam.room}</span>
+                  </div>
+                </div>
+
+                {/* Days Left */}
+                {!isPast && (
+                  <div style={{textAlign:'center',flexShrink:0}}>
+                    <div style={{fontSize:24,fontWeight:800,color:isClose?'var(--amber)':'var(--accent)'}}>{days}</div>
+                    <div style={{fontSize:11,color:'var(--text3)'}}>din baaki</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Add Exam Modal */}
+      {modal && (
+        <div className="modal-overlay" onClick={()=>setModal(false)}>
+          <div className="modal" style={{width:460}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <div className="modal-title" style={{margin:0}}>📅 Naya Exam Add Karo</div>
+              <button onClick={()=>setModal(false)} style={{border:'none',background:'none',cursor:'pointer'}}><Icon name="close" size={18}/></button>
+            </div>
+            <div className="grid-2" style={{gap:14}}>
+              <div style={{gridColumn:'1/-1'}}>
+                <label className="form-label">Subject *</label>
+                <input className="form-input" placeholder="e.g. Data Structures" value={form.subject} onChange={e=>setForm(p=>({...p,subject:e.target.value}))}/>
+              </div>
+              <div>
+                <label className="form-label">Date *</label>
+                <input type="date" className="form-input" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/>
+              </div>
+              <div>
+                <label className="form-label">Time</label>
+                <input className="form-input" placeholder="10:00 AM" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))}/>
+              </div>
+              <div>
+                <label className="form-label">Room / Hall</label>
+                <select className="form-input" value={form.room} onChange={e=>setForm(p=>({...p,room:e.target.value}))}>
+                  {['Hall A','Hall B','Hall C','Hall D','Lab 1','Lab 2'].map(r=><option key={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Exam Type</label>
+                <select className="form-input" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>
+                  <option>Mid Sem</option><option>End Sem</option><option>Unit Test</option><option>Practical</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={addExam}>📅 Add Exam</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🔔 PUSH NOTIFICATIONS — Global Toast System
+// ═══════════════════════════════════════════════════════════════════
+function usePushNotifications() {
+  const [permission, setPermission] = useState('default');
+  const [notifs, setNotifs]         = useState([
+    {id:1, title:'📅 Exam Alert!',       body:'Data Structures exam kal hai — 10 April!', time:'Just now', read:false},
+    {id:2, title:'⚠️ Attendance Warning', body:'Computer Networks mein attendance 68% hai', time:'2h ago',  read:false},
+    {id:3, title:'💰 Fee Reminder',       body:'Fee due date 31 March hai — Rs.25,000 baaki', time:'1d ago', read:true},
+    {id:4, title:'📊 Result Published',   body:'Mid sem result declare ho gaya!',            time:'2d ago', read:true},
+  ]);
+
+  const requestPermission = () => {
+    if ('Notification' in window) {
+      Notification.requestPermission().then(p => {
+        setPermission(p);
+        if (p === 'granted') {
+          new Notification('EduERP', { body: 'Notifications ON ho gayi hain! 🎉' });
+        }
+      });
+    }
+  };
+
+  const markRead = (id) => setNotifs(p=>p.map(n=>n.id===id?{...n,read:true}:n));
+  const markAllRead = () => setNotifs(p=>p.map(n=>({...n,read:true})));
+  const unreadCount = notifs.filter(n=>!n.read).length;
+
+  return { permission, requestPermission, notifs, markRead, markAllRead, unreadCount };
+}
+
+
 // ─── App Shell ────────────────────────────────────────────────────────────────
 const PAGE_TITLES = {
-  dashboard:'Dashboard',attendance:'My Attendance',marks:'My Marks',timetable:'Timetable',
-  notifications:'Notifications','class-attendance':'Class Attendance','marks-entry':'Marks Entry',
-  students:'All Students',teachers:'All Teachers',reports:'Reports & Analytics',settings:'System Settings',
-  branches:'Branch Management',
+  dashboard:'Dashboard', attendance:'My Attendance', marks:'My Marks', timetable:'Timetable',
+  notifications:'Notifications', 'class-attendance':'Class Attendance', 'marks-entry':'Marks Entry',
+  students:'All Students', teachers:'All Teachers', reports:'Reports & Analytics', settings:'System Settings',
+  branches:'Branch Management', 'fee-mgmt':'Fee Management', fee:'My Fee Details',
+  'exam-schedule':'Exam Schedule', analytics:'Analytics & Charts',
 };
 
 function App() {
   const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState('dashboard');
+  const token = user?.token || localStorage.getItem('erp_token') || '';
 
   const renderContent = () => {
     if (!user) return null;
     if (user.role === 'student') {
-      const views = { dashboard:<StudentDashboard user={user}/>, attendance:<AttendancePage/>, marks:<MarksPage/>, timetable:<TimetablePage/>, notifications:<NotificationsPage/> };
+      const views = { dashboard:<StudentDashboard user={user}/>, attendance:<AttendancePage/>, marks:<MarksPage/>, timetable:<TimetablePage/>, notifications:<NotificationsPage/>, 'exam-schedule':<ExamSchedulePage/>, fee:<FeeDetailsPage user={user}/> };
       return views[activeView] || <StudentDashboard user={user}/>;
     }
     if (user.role === 'teacher') {
-      const views = { dashboard:<TeacherDashboard user={user}/>, 'class-attendance':<ClassAttendancePage/>, 'marks-entry':<MarksEntryPage/>, timetable:<TimetablePage/>, notifications:<NotificationsPage/> };
+      const views = { dashboard:<TeacherDashboard user={user}/>, 'class-attendance':<ClassAttendancePage/>, 'marks-entry':<MarksEntryPage/>, timetable:<TimetablePage/>, notifications:<NotificationsPage/>, 'exam-schedule':<ExamSchedulePage/> };
       return views[activeView] || <TeacherDashboard user={user}/>;
     }
     if (user.role === 'admin') {
-      const views = { dashboard:<AdminDashboard/>, branches:<BranchManagementPage/>, students:<StudentsPage/>, teachers:<TeachersPage/>, reports:<ReportsPage/>, settings:<SettingsPage user={user}/> };
+      const views = { dashboard:<AdminDashboard/>, branches:<BranchManagementPage/>, students:<StudentsPage token={token}/>, teachers:<TeachersPage/>, reports:<ReportsPage/>, settings:<SettingsPage user={user}/>, 'fee-mgmt':<FeeMgmtPage/>, 'exam-schedule':<ExamSchedulePage/>, analytics:<AnalyticsPage/> };
       return views[activeView] || <AdminDashboard/>;
     }
   };
 
   if (!user) return <LoginScreen onLogin={(u)=>{setUser(u);setActiveView('dashboard');}}/>;
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="app-layout">
-      <Sidebar user={user} activeView={activeView} setActiveView={setActiveView} onLogout={()=>{setUser(null);setActiveView('dashboard');}}/>
+      {/* Mobile overlay */}
+      {sidebarOpen && <div className="mobile-overlay" onClick={()=>setSidebarOpen(false)}/>}
+      <Sidebar user={user} activeView={activeView} setActiveView={(v)=>{setActiveView(v);setSidebarOpen(false);}} onLogout={()=>{setUser(null);setActiveView('dashboard');localStorage.removeItem('erp_token');}} isOpen={sidebarOpen}/>
       <div className="main-content">
         <div className="topbar">
-          <div className="page-title">{PAGE_TITLES[activeView]||'Dashboard'}</div>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <button className="mobile-menu-btn" onClick={()=>setSidebarOpen(!sidebarOpen)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <div className="page-title">{PAGE_TITLES[activeView]||'Dashboard'}</div>
+          </div>
           <div className="topbar-right">
-            <div style={{fontSize:13,color:'var(--text3)'}}>
+            <div className="topbar-date" style={{fontSize:13,color:'var(--text3)'}}>
               {new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
             </div>
             <button className="badge-btn" onClick={()=>setActiveView('notifications')}>
