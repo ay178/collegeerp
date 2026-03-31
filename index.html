@@ -1024,7 +1024,6 @@ function ClassAttendancePage() {
     Object.keys(attendance).forEach(id => upd[id] = status);
     setAttendance(upd);
   };
-
   const saveLecture = () => {
     if (!activeLecture) return;
     const key = `${selectedDate}_${activeLecture.subject}_${activeLecture.div}`;
@@ -2121,7 +2120,7 @@ function BranchManagementPage() {
           {students.length === 0 ? (
             <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
               <div style={{fontSize:32,marginBottom:10}}>👨‍🎓</div>
-              <div style={{fontSize:14,fontWeight:500}}>Koi student nahi mila</div>
+              <div style={{fontSize:14,fontWeight:500}}> No student found </div>
               <div style={{fontSize:13,marginTop:4}}>Upar "Add Student" button click karo</div>
             </div>
           ) : (
