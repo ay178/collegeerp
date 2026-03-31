@@ -6,7 +6,10 @@ const mongoose = require('mongoose');
 const app = express();
 
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({ 
+  origin: ['http://localhost:3000', 'http://localhost:5000', 'http://127.0.0.1:5000', 'file://'],
+  credentials: true 
+}));
 app.use(express.json());
 
 // Health check
@@ -32,8 +35,22 @@ userSchema.pre('save', async function(next) {
 });
 const User = mongoose.model('User', userSchema);
 
+// ── Teacher Schema ──
+const teacherSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  phone: String,
+  department: String,
+  subjects: [String],
+  qualifications: String,
+  experience: { type: Number, default: 0 },
+  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+}, { timestamps: true });
+const Teacher = mongoose.model('Teacher', teacherSchema);
+
 // ── Student Schema ──
 const studentSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   rollNo: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   email: String,
@@ -143,8 +160,39 @@ app.get('/api/students', protect, async (req, res) => {
 // POST /api/students
 app.post('/api/students', protect, restrictTo('admin'), async (req, res) => {
   try {
-    const student = await Student.create(req.body);
-    res.status(201).json(student);
+    const { name, email, password, rollNo, phone, branch, semester, division, status } = req.body;
+    
+    // Validate required fields
+    if (!name || !email || !password || !rollNo) {
+      return res.status(400).json({ message: 'Name, email, password, and roll number are required' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Email already registered' });
+    }
+
+    // Create User account (will hash password in pre-save middleware)
+    const user = await User.create({ name, email, password, role: 'student' });
+
+    // Create Student record
+    const student = await Student.create({
+      name,
+      email,
+      rollNo,
+      phone,
+      branch,
+      semester,
+      division,
+      status: status || 'active',
+      userId: user._id
+    });
+
+    res.status(201).json({
+      student,
+      loginCredentials: { email, password: req.body.password, role: 'student' }
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -165,6 +213,65 @@ app.delete('/api/students/:id', protect, restrictTo('admin'), async (req, res) =
   try {
     await Student.findByIdAndDelete(req.params.id);
     res.json({ message: 'Student deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/teachers
+app.get('/api/teachers', protect, async (req, res) => {
+  try {
+    const { department, search, status } = req.query;
+    const filter = {};
+    if (department) filter.department = department;
+    if (status) filter.status = status;
+    if (search) filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+    ];
+    const teachers = await Teacher.find(filter).sort({ name: 1 });
+    res.json(teachers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/teachers/:id
+app.get('/api/teachers/:id', protect, async (req, res) => {
+  try {
+    const teacher = await Teacher.findById(req.params.id);
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    res.json(teacher);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/teachers
+app.post('/api/teachers', protect, restrictTo('admin'), async (req, res) => {
+  try {
+    const teacher = await Teacher.create(req.body);
+    res.status(201).json(teacher);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// PUT /api/teachers/:id
+app.put('/api/teachers/:id', protect, restrictTo('admin'), async (req, res) => {
+  try {
+    const teacher = await Teacher.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(teacher);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// DELETE /api/teachers/:id
+app.delete('/api/teachers/:id', protect, restrictTo('admin'), async (req, res) => {
+  try {
+    await Teacher.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Teacher deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -248,15 +355,46 @@ app.get('/api/admin/stats', protect, restrictTo('admin'), async (req, res) => {
 // ════════════════════════════════════════
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/college_erp';
 
+// Function to start server with fallback ports
+function startServer(preferredPort, attempt = 0) {
+  const MAX_ATTEMPTS = 100;
+  let portNum = Number(preferredPort) || 5000;
+
+  if (attempt >= MAX_ATTEMPTS) {
+    console.error(`❌ Could not bind server after ${MAX_ATTEMPTS} attempts. Aborting.`);
+    return;
+  }
+
+  if (portNum <= 0 || portNum >= 65536) {
+    console.error(`❌ Invalid port ${portNum}. Must be between 1 and 65535.`);
+    return;
+  }
+
+  const server = app.listen(portNum, () => {
+    console.log(`🚀 Server running on http://localhost:${portNum}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      const nextPort = portNum + 1;
+      console.log(`⚠️  Port ${portNum} is in use, trying port ${nextPort}...`);
+      // try next numeric port
+      startServer(nextPort, attempt + 1);
+    } else {
+      console.error('❌ Server error:', err);
+    }
+  });
+}
+
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    startServer(PORT);
   })
   .catch(err => {
     console.error('❌ MongoDB connection failed:', err.message);
     console.log('💡 Frontend (index.html) still works without MongoDB!');
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT} (no DB)`));
+    startServer(PORT);
   });
