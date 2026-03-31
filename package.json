@@ -1,7 +1,7 @@
 {
   "name": "college-erp-backend",
-  "version": "1.0.0",
-  "description": "College ERP System — Node.js + Express + MongoDB REST API",
+  "version": "2.0.0",
+  "description": "College ERP Backend with Email Notifications",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -13,9 +13,12 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.0.3"
+    "mongoose": "^8.0.3",
+    "nodemailer": "^6.9.7"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   }
 }
+
+  
