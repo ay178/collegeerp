@@ -34,8 +34,6 @@
     --radius-lg: 14px;
     --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
-    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
   button { font-family: inherit; cursor: pointer; }
@@ -48,18 +46,17 @@
   .sidebar {
     width: 240px; background: var(--surface); border-right: 1px solid var(--border);
     display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh;
-    z-index: 100; transition: width 0.2s; box-shadow: var(--shadow-md);
+    z-index: 100; transition: width 0.2s;
   }
   .sidebar-logo {
     padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; gap: 10px;
   }
   .logo-mark {
-    width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%); border-radius: 8px;
+    width: 32px; height: 32px; background: var(--accent); border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 600; color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.3); transition: var(--transition);
+    font-size: 14px; font-weight: 600; color: white;
   }
-  .logo-mark:hover { transform: scale(1.1); box-shadow: 0 6px 16px rgba(37,99,235,0.4); }
   .logo-text { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
   .logo-text span { color: var(--accent); }
   .sidebar-section { padding: 12px 10px 4px; }
@@ -70,20 +67,18 @@
   .nav-item {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
     cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 400;
-    transition: var(--transition); border: none; background: none; width: 100%; text-align: left;
-    position: relative;
+    transition: all 0.15s; border: none; background: none; width: 100%; text-align: left;
   }
-  .nav-item:hover { background: var(--surface2); color: var(--text); transform: translateX(2px); }
-  .nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; box-shadow: inset 0 0 0 1px var(--accent-border); }
-  .nav-item svg { flex-shrink: 0; opacity: 0.8; transition: var(--transition); }
-  .nav-item:hover svg { opacity: 1; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  .nav-item svg { flex-shrink: 0; opacity: 0.8; }
   .nav-item.active svg { opacity: 1; }
   .sidebar-footer { margin-top: auto; padding: 12px 10px; border-top: 1px solid var(--border); }
   .user-card {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
-    cursor: pointer; transition: var(--transition);
+    cursor: pointer; transition: background 0.15s;
   }
-  .user-card:hover { background: var(--surface2); transform: translateX(2px); }
+  .user-card:hover { background: var(--surface2); }
   .avatar {
     width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
     justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0;
@@ -97,31 +92,28 @@
   .topbar {
     background: var(--surface); border-bottom: 1px solid var(--border);
     padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 50; box-shadow: var(--shadow);
+    position: sticky; top: 0; z-index: 50;
   }
   .page-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
   .topbar-right { display: flex; align-items: center; gap: 12px; }
   .badge-btn {
     position: relative; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--surface); display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: var(--transition);
+    cursor: pointer; transition: background 0.15s;
   }
-  .badge-btn:hover { background: var(--surface2); transform: scale(1.05); }
+  .badge-btn:hover { background: var(--surface2); }
   .badge { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; border: 2px solid var(--surface); }
   .content-area { padding: 28px; flex: 1; }
 
   /* Cards */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; transition: var(--transition); box-shadow: var(--shadow); }
-  .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
   .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   .card-title { font-size: 14px; font-weight: 600; color: var(--text); }
   .card-subtitle { font-size: 13px; color: var(--text3); margin-top: 2px; }
 
   /* Stat cards */
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; transition: var(--transition); box-shadow: var(--shadow); position: relative; overflow: hidden; }
-  .stat-card::before { content: ''; position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: radial-gradient(circle, rgba(37,99,235,0.03) 0%, transparent 70%); }
-  .stat-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; }
   .stat-label { font-size: 12px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
   .stat-value { font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: -1px; line-height: 1; }
   .stat-sub { font-size: 12px; color: var(--text3); margin-top: 6px; }
@@ -133,13 +125,12 @@
   .badge-purple { background: var(--purple-bg); color: var(--purple); }
 
   /* Tables */
-  .table-wrap { overflow-x: auto; border-radius: var(--radius-lg); }
+  .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { font-size: 11.5px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border); background: subtle gradient; }
-  td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; transition: var(--transition); }
+  th { font-size: 11.5px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
-  tbody tr { transition: var(--transition); }
+  tr:hover td { background: var(--bg); }
 
   /* Grid layouts */
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -147,75 +138,65 @@
   .mb-6 { margin-bottom: 24px; }
 
   /* Buttons */
-  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: var(--transition); border: none; position: relative; overflow: hidden; }
-  .btn::before { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; border-radius: 50%; background: rgba(255,255,255,0.2); transform: translate(-50%, -50%); transition: width 0.6s, height 0.6s; }
-  .btn:active::before { width: 300px; height: 300px; }
-  .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
-  .btn-primary:hover { background: #1d4ed8; box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #1d4ed8; }
   .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-  .btn-secondary:hover { background: var(--surface2); border-color: var(--text2); }
+  .btn-secondary:hover { background: var(--surface2); }
   .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
   .btn-danger:hover { background: #fee2e2; }
   .btn-sm { padding: 5px 12px; font-size: 13px; }
 
   /* Progress bars */
   .progress-bar { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 99px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(37,99,235,0.3); }
+  .progress-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
 
   /* Login screen */
   .login-screen {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, var(--bg) 0%, #fafaf8 100%);
-    background-image:
-      radial-gradient(ellipse at 20% 20%, rgba(37,99,235,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 60%);
+    background: var(--bg);
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(37,99,235,0.06) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.05) 0%, transparent 60%);
   }
-  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 36px; width: 400px; box-shadow: var(--shadow-lg); animation: slideUp 0.4s ease-out; }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 36px; width: 400px; box-shadow: var(--shadow-md); }
   .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
   .login-title { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
   .login-sub { font-size: 14px; color: var(--text2); margin-top: 4px; margin-bottom: 24px; }
   .role-tabs { display: flex; background: var(--surface2); border-radius: 10px; padding: 3px; gap: 3px; margin-bottom: 24px; }
-  .role-tab { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text2); transition: var(--transition); }
+  .role-tab { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text2); transition: all 0.15s; }
   .role-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
   .form-group { margin-bottom: 16px; }
   .form-label { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 6px; display: block; }
   .form-input {
     width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
     font-size: 14px; color: var(--text); background: var(--surface); outline: none;
-    transition: var(--transition);
+    transition: border-color 0.15s;
   }
-  .form-input:hover { border-color: var(--text2); background: #fefdfb); }
-  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1), inset 0 1px 2px rgba(0,0,0,0.02); }
-  .login-btn { width: 100%; padding: 11px; background: var(--accent); color: white; border: none; border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: var(--transition); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
-  .login-btn:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+  .login-btn { width: 100%; padding: 11px; background: var(--accent); color: white; border: none; border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+  .login-btn:hover { background: #1d4ed8; }
   .demo-creds { margin-top: 20px; padding: 14px; background: var(--surface2); border-radius: 9px; }
   .demo-title { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
   .demo-row { font-size: 12.5px; color: var(--text2); margin-bottom: 4px; font-family: 'DM Mono', monospace; }
 
   /* Attendance chart */
-  .att-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; transition: var(--transition); }
-  .att-bar-row:hover { transform: translateX(2px); }
+  .att-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .att-subject { font-size: 13px; color: var(--text2); width: 140px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .att-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
-  .att-bar-fill { height: 100%; border-radius: 99px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+  .att-bar-fill { height: 100%; border-radius: 99px; }
   .att-pct { font-size: 13px; font-weight: 600; color: var(--text); width: 38px; text-align: right; flex-shrink: 0; }
 
   /* Mark circles */
-  .mark-circle { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; transition: var(--transition); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .mark-circle:hover { transform: scale(1.1); }
+  .mark-circle { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
 
   /* Modal */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease-out; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; width: 500px; max-width: 95vw; box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto; animation: modalSlideIn 0.3s ease-out; }
-  @keyframes modalSlideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; display: flex; align-items: center; justify-content: center; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; width: 500px; max-width: 95vw; box-shadow: var(--shadow-md); max-height: 90vh; overflow-y: auto; }
   .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
   .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
   /* Chips */
-  .chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12.5px; font-weight: 500; transition: var(--transition); }
-  .chip:hover { transform: scale(1.05); }
+  .chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12.5px; font-weight: 500; }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -224,36 +205,20 @@
 
   /* Calendar grid */
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 12px; font-weight: 500; transition: var(--transition); }
+  .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 12px; font-weight: 500; }
   .cal-present { background: var(--green-bg); color: var(--green); }
-  .cal-present:hover { transform: scale(1.1); box-shadow: 0 2px 8px rgba(22,163,74,0.2); }
   .cal-absent { background: var(--red-bg); color: var(--red); }
-  .cal-absent:hover { transform: scale(1.1); box-shadow: 0 2px 8px rgba(220,38,38,0.2); }
   .cal-holiday { background: var(--amber-bg); color: var(--amber); }
-  .cal-holiday:hover { transform: scale(1.1); box-shadow: 0 2px 8px rgba(217,119,6,0.2); }
   .cal-empty { opacity: 0; }
   .cal-header { font-size: 11px; color: var(--text3); text-transform: uppercase; text-align: center; margin-bottom: 6px; }
 
   /* Notification dot */
-  .notif-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); transition: var(--transition); }
-  .notif-item:hover { background: var(--surface2); padding: 12px 8px; margin: 0 -8px; border-radius: 6px; }
+  .notif-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
   .notif-item:last-child { border-bottom: none; }
-  .notif-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
 
   /* Select */
-  select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6960' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; transition: var(--transition); }
-  select.form-input:hover { border-color: var(--text2); }
-
-  /* Avatar styling */
-  .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-
-  /* Smooth animation for page transitions */
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .content-area > * { animation: fadeInUp 0.3s ease-out; }
+  select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6960' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
 
   @media (max-width: 900px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -280,7 +245,7 @@ const STUDENTS = [
   { id: 2, name: 'Priya Sharma', rollNo: 'CS2023002', semester: '4th', branch: 'CS', div: 'A', email: 'priya@edu.com', phone: '9876543211', status: 'active' },
   { id: 3, name: 'Rahul Verma', rollNo: 'CS2023003', semester: '4th', branch: 'CS', div: 'B', email: 'rahul@edu.com', phone: '9876543212', status: 'active' },
   { id: 4, name: 'Sneha Patel', rollNo: 'CS2023004', semester: '4th', branch: 'CS', div: 'A', email: 'sneha@edu.com', phone: '9876543213', status: 'active' },
-  { id: 5, name: 'Vikram Rao', rollNo: 'CS2023005', semester: '4th', branch: 'CS', div: 'B', email: 'vikram@edu.com', phone: '9876543214', status: 'active' },
+  { id: 5, name: 'Vikram Rao', rollNo: 'CS2023005', semester: '4th', branch: 'CS', div: 'B', email: 'vikram@edu.com', phone: '9876543214', status: 'inactive' },
   { id: 6, name: 'Kavya Nair', rollNo: 'IT2023001', semester: '2nd', branch: 'IT', div: 'A', email: 'kavya@edu.com', phone: '9876543215', status: 'active' },
   { id: 7, name: 'Rohan Das', rollNo: 'IT2023002', semester: '2nd', branch: 'IT', div: 'B', email: 'rohan@edu.com', phone: '9876543216', status: 'active' },
   { id: 8, name: 'Ananya Iyer', rollNo: 'ME2023001', semester: '6th', branch: 'ME', div: 'A', email: 'ananya@edu.com', phone: '9876543217', status: 'active' },
@@ -356,30 +321,10 @@ function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = async () => {
-    setError('');
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role })
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        setError(data.message || 'Login failed');
-        return;
-      }
-
-      // Store token and user info
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      onLogin(data.user);
-    } catch (err) {
-      setError('Connection error. Make sure backend is running on port 5000');
-    }
+  const handleLogin = () => {
+    const user = USERS.find(u => u.email === email && u.password === password && u.role === role);
+    if (user) { onLogin(user); }
+    else { setError('Invalid credentials. Please try again.'); }
   };
 
   const fillDemo = (r) => {
@@ -453,11 +398,12 @@ function Sidebar({ user, activeView, setActiveView, onLogout }) {
     { id: 'notifications', label: 'Notifications', icon: 'bell' },
   ];
   const adminNav = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { id: 'students', label: 'Students', icon: 'users' },
-    { id: 'teachers', label: 'Teachers', icon: 'teacher' },
-    { id: 'reports', label: 'Reports', icon: 'bar' },
-    { id: 'settings', label: 'Settings', icon: 'settings' },
+    { id: 'dashboard', label: 'Dashboard',        icon: 'dashboard' },
+    { id: 'branches', label: 'Branch Management', icon: 'bar'       },
+    { id: 'students', label: 'All Students',       icon: 'users'     },
+    { id: 'teachers', label: 'All Teachers',       icon: 'teacher'   },
+    { id: 'reports',  label: 'Reports',            icon: 'marks'     },
+    { id: 'settings', label: 'Settings',           icon: 'settings'  },
   ];
   const navItems = user.role==='student' ? studentNav : user.role==='teacher' ? teacherNav : adminNav;
   const avatarColors = { student: ['#eff6ff','#2563eb'], teacher: ['#f5f3ff','#7c3aed'], admin: ['#f0fdf4','#16a34a'] };
@@ -591,68 +537,292 @@ function StudentDashboard({ user }) {
   );
 }
 
+// ─── Daily Lecture Attendance Data ───────────────────────────────────────────
+const DAILY_ATTENDANCE = [
+  { date:'2025-03-31', day:'Monday',    lectures:[
+    { time:'9:00 - 10:00',  subject:'Data Structures',    teacher:'Prof. Anjali Singh', status:'present' },
+    { time:'11:00 - 12:00', subject:'Algorithms',         teacher:'Prof. Anjali Singh', status:'present' },
+    { time:'2:00 - 3:00',   subject:'DBMS',               teacher:'Dr. Suresh Nair',   status:'absent'  },
+    { time:'3:00 - 4:00',   subject:'Operating Systems',  teacher:'Dr. Suresh Nair',   status:'present' },
+  ]},
+  { date:'2025-03-28', day:'Friday',    lectures:[
+    { time:'9:00 - 10:00',  subject:'Data Structures',    teacher:'Prof. Anjali Singh', status:'present' },
+    { time:'11:00 - 12:00', subject:'Computer Networks',  teacher:'Dr. Suresh Nair',   status:'absent'  },
+    { time:'2:00 - 4:00',   subject:'CN Lab',             teacher:'Dr. Suresh Nair',   status:'present' },
+  ]},
+  { date:'2025-03-27', day:'Thursday',  lectures:[
+    { time:'9:00 - 10:00',  subject:'Operating Systems',  teacher:'Dr. Suresh Nair',   status:'present' },
+    { time:'11:00 - 12:00', subject:'Computer Networks',  teacher:'Dr. Suresh Nair',   status:'present' },
+    { time:'4:00 - 5:00',   subject:'Project Work',       teacher:'Prof. Anjali Singh', status:'present' },
+  ]},
+  { date:'2025-03-26', day:'Wednesday', lectures:[
+    { time:'9:00 - 10:00',  subject:'Data Structures',    teacher:'Prof. Anjali Singh', status:'absent'  },
+    { time:'11:00 - 12:00', subject:'DBMS',               teacher:'Dr. Suresh Nair',   status:'present' },
+    { time:'2:00 - 3:00',   subject:'Algorithms',         teacher:'Prof. Anjali Singh', status:'present' },
+  ]},
+  { date:'2025-03-25', day:'Tuesday',   lectures:[
+    { time:'9:00 - 10:00',  subject:'Computer Networks',  teacher:'Dr. Suresh Nair',   status:'present' },
+    { time:'2:00 - 3:00',   subject:'Operating Systems',  teacher:'Dr. Suresh Nair',   status:'absent'  },
+    { time:'4:00 - 5:00',   subject:'Tutorial',           teacher:'Prof. Anjali Singh', status:'present' },
+  ]},
+  { date:'2025-03-24', day:'Monday',    lectures:[
+    { time:'9:00 - 10:00',  subject:'Data Structures',    teacher:'Prof. Anjali Singh', status:'present' },
+    { time:'11:00 - 12:00', subject:'Algorithms',         teacher:'Prof. Anjali Singh', status:'present' },
+    { time:'2:00 - 3:00',   subject:'DBMS',               teacher:'Dr. Suresh Nair',   status:'present' },
+    { time:'3:00 - 5:00',   subject:'DBMS Lab',           teacher:'Dr. Suresh Nair',   status:'holiday' },
+  ]},
+  { date:'2025-03-21', day:'Friday',    lectures:[
+    { time:'9:00 - 10:00',  subject:'Data Structures',    teacher:'Prof. Anjali Singh', status:'absent'  },
+    { time:'11:00 - 12:00', subject:'Computer Networks',  teacher:'Dr. Suresh Nair',   status:'absent'  },
+    { time:'2:00 - 4:00',   subject:'CN Lab',             teacher:'Dr. Suresh Nair',   status:'present' },
+  ]},
+  { date:'2025-03-20', day:'Thursday',  lectures:[
+    { time:'9:00 - 10:00',  subject:'Operating Systems',  teacher:'Dr. Suresh Nair',   status:'present' },
+    { time:'11:00 - 12:00', subject:'Computer Networks',  teacher:'Dr. Suresh Nair',   status:'present' },
+    { time:'4:00 - 5:00',   subject:'Project Work',       teacher:'Prof. Anjali Singh', status:'present' },
+  ]},
+];
+
 // ─── Attendance Page ──────────────────────────────────────────────────────────
 function AttendancePage() {
-  const days = ['S','M','T','W','T','F','S'];
-  const calData = [];
-  for(let i=0;i<3;i++) calData.push('empty');
-  for(let i=1;i<=30;i++){
-    const r=Math.random();
-    if(i>28) calData.push('holiday');
-    else calData.push(r>0.2?'present':r>0.08?'absent':'holiday');
-  }
+  const [activeTab, setActiveTab] = useState('daily');
+  const [selectedDate, setSelectedDate] = useState(DAILY_ATTENDANCE[0].date);
+  const [expandedDates, setExpandedDates] = useState({ [DAILY_ATTENDANCE[0].date]: true });
+
+  // Stats calculate
+  const allLectures = DAILY_ATTENDANCE.flatMap(d => d.lectures);
+  const totalLectures = allLectures.filter(l => l.status !== 'holiday').length;
+  const presentLectures = allLectures.filter(l => l.status === 'present').length;
+  const absentLectures = allLectures.filter(l => l.status === 'absent').length;
+  const overallPct = Math.round((presentLectures / totalLectures) * 100);
+
+  const toggleDate = (date) => setExpandedDates(p => ({ ...p, [date]: !p[date] }));
+
+  const statusStyle = (status) => {
+    if (status === 'present') return { bg:'var(--green-bg)', color:'var(--green)', label:'✓ Present' };
+    if (status === 'absent')  return { bg:'var(--red-bg)',   color:'var(--red)',   label:'✗ Absent'  };
+    return { bg:'var(--amber-bg)', color:'var(--amber)', label:'— Holiday' };
+  };
+
+  // Subject wise summary
+  const subjectMap = {};
+  allLectures.forEach(l => {
+    if (!subjectMap[l.subject]) subjectMap[l.subject] = { present:0, absent:0, holiday:0, total:0 };
+    subjectMap[l.subject][l.status]++;
+    if (l.status !== 'holiday') subjectMap[l.subject].total++;
+  });
+
   return (
     <div>
-      <div className="stats-grid">
-        <div className="stat-card"><div className="stat-label">Classes Attended</div><div className="stat-value">194</div><div className="stat-sub" style={{color:'var(--text3)'}}>out of 233 total</div></div>
-        <div className="stat-card"><div className="stat-label">Overall %</div><div className="stat-value" style={{color:'var(--green)'}}>83%</div><div className="stat-sub"><span className="stat-badge badge-green">Above 75%</span></div></div>
-        <div className="stat-card"><div className="stat-label">Absent Days</div><div className="stat-value" style={{color:'var(--red)'}}>39</div><div className="stat-sub"><span className="stat-badge badge-red">This semester</span></div></div>
-        <div className="stat-card"><div className="stat-label">Holidays</div><div className="stat-value">14</div><div className="stat-sub"><span className="stat-badge badge-amber">This semester</span></div></div>
-      </div>
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-header"><div className="card-title">March 2025 Calendar</div></div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3,marginBottom:8}}>
-            {days.map(d=><div key={d} style={{textAlign:'center',fontSize:11,color:'var(--text3)',fontWeight:600,padding:'4px 0'}}>{d}</div>)}
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3}}>
-            {calData.map((d,i)=>(
-              <div key={i} className={`cal-day ${d==='empty'?'cal-empty':d==='present'?'cal-present':d==='absent'?'cal-absent':'cal-holiday'}`}>
-                {d!=='empty'?i-2:''}
-              </div>
-            ))}
-          </div>
-          <div style={{display:'flex',gap:16,marginTop:14}}>
-            {[['cal-present','Present'],['cal-absent','Absent'],['cal-holiday','Holiday']].map(([cls,label])=>(
-              <div key={cls} style={{display:'flex',alignItems:'center',gap:6}}>
-                <div className={`cal-day ${cls}`} style={{width:14,height:14,minWidth:14,fontSize:10,aspectRatio:'unset',borderRadius:4}}/>
-                <span style={{fontSize:12,color:'var(--text3)'}}>{label}</span>
-              </div>
-            ))}
-          </div>
+      {/* Stats */}
+      <div className="stats-grid" style={{marginBottom:20}}>
+        <div className="stat-card">
+          <div className="stat-label">Total Lectures</div>
+          <div className="stat-value">{totalLectures}</div>
+          <div className="stat-sub" style={{color:'var(--text3)'}}>This semester</div>
         </div>
-        <div className="card">
-          <div className="card-header"><div className="card-title">Subject-wise Attendance</div></div>
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Subject</th><th>Attended</th><th>Total</th><th>%</th><th>Status</th></tr></thead>
-              <tbody>
-                {Object.entries(ATTENDANCE_DATA).map(([subj,d])=>{
-                  const pct=Math.round(d.present/d.total*100);
-                  return (
-                    <tr key={subj}>
-                      <td style={{fontWeight:500}}>{subj}</td>
-                      <td>{d.present}</td><td>{d.total}</td>
-                      <td style={{fontWeight:600,color:pct>=75?'var(--green)':pct>=60?'var(--amber)':'var(--red)'}}>{pct}%</td>
-                      <td><span className={`chip ${pct>=75?'badge-green':pct>=60?'badge-amber':'badge-red'}`}>{pct>=75?'Good':pct>=60?'Average':'Low'}</span></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="stat-card">
+          <div className="stat-label">Present</div>
+          <div className="stat-value" style={{color:'var(--green)'}}>{presentLectures}</div>
+          <div className="stat-sub"><span className="stat-badge badge-green">{overallPct}% overall</span></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Absent</div>
+          <div className="stat-value" style={{color:'var(--red)'}}>{absentLectures}</div>
+          <div className="stat-sub"><span className="stat-badge badge-red">This semester</span></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Status</div>
+          <div className="stat-value" style={{fontSize:20,color:overallPct>=75?'var(--green)':'var(--red)'}}>{overallPct>=75?'Safe ✓':'Low ⚠'}</div>
+          <div className="stat-sub"><span className={`stat-badge ${overallPct>=75?'badge-green':'badge-red'}`}>Min 75% required</span></div>
         </div>
       </div>
+
+      {/* Tabs */}
+      <div style={{display:'flex',gap:4,background:'var(--surface2)',borderRadius:10,padding:4,marginBottom:20,width:'fit-content'}}>
+        {[['daily','📅 Daily Lecture View'],['subject','📊 Subject-wise Summary']].map(([tab,label])=>(
+          <button key={tab} onClick={()=>setActiveTab(tab)}
+            style={{padding:'8px 18px',borderRadius:8,border:'none',cursor:'pointer',fontSize:13,fontWeight:500,
+              background:activeTab===tab?'var(--surface)':'transparent',
+              color:activeTab===tab?'var(--text)':'var(--text3)',
+              boxShadow:activeTab===tab?'0 1px 3px rgba(0,0,0,0.08)':'none',transition:'all 0.15s'}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── DAILY LECTURE VIEW ── */}
+      {activeTab === 'daily' && (
+        <div>
+          {DAILY_ATTENDANCE.map(dayData => {
+            const dayLectures = dayData.lectures.filter(l=>l.status!=='holiday');
+            const dayPresent = dayData.lectures.filter(l=>l.status==='present').length;
+            const dayTotal = dayData.lectures.filter(l=>l.status!=='holiday').length;
+            const isExpanded = expandedDates[dayData.date];
+            const formattedDate = new Date(dayData.date).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+            const isToday = dayData.date === DAILY_ATTENDANCE[0].date;
+
+            return (
+              <div key={dayData.date} className="card" style={{marginBottom:12}}>
+                {/* Date Header — clickable to expand/collapse */}
+                <div onClick={()=>toggleDate(dayData.date)}
+                  style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer',userSelect:'none'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:12}}>
+                    {/* Date Badge */}
+                    <div style={{width:44,height:44,borderRadius:10,background:isToday?'var(--accent)':'var(--surface2)',
+                      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <div style={{fontSize:16,fontWeight:700,color:isToday?'white':'var(--text)',lineHeight:1}}>
+                        {new Date(dayData.date).getDate()}
+                      </div>
+                      <div style={{fontSize:10,color:isToday?'rgba(255,255,255,0.8)':'var(--text3)',fontWeight:500}}>
+                        {dayData.day.slice(0,3).toUpperCase()}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:15,fontWeight:600,color:'var(--text)'}}>{dayData.day}</span>
+                        {isToday && <span className="chip badge-blue" style={{fontSize:11}}>Today</span>}
+                      </div>
+                      <div style={{fontSize:12,color:'var(--text3)',marginTop:2}}>{formattedDate}</div>
+                    </div>
+                  </div>
+
+                  <div style={{display:'flex',alignItems:'center',gap:16}}>
+                    {/* Mini attendance pills */}
+                    <div style={{display:'flex',gap:6}}>
+                      {dayData.lectures.map((l,i)=>(
+                        <div key={i} title={`${l.subject} — ${l.status}`}
+                          style={{width:10,height:10,borderRadius:'50%',
+                            background:l.status==='present'?'var(--green)':l.status==='absent'?'var(--red)':'var(--amber)'}}/>
+                      ))}
+                    </div>
+                    {/* Day summary */}
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:14,fontWeight:700,color:dayPresent===dayTotal?'var(--green)':dayPresent===0?'var(--red)':'var(--amber)'}}>
+                        {dayPresent}/{dayTotal}
+                      </div>
+                      <div style={{fontSize:11,color:'var(--text3)'}}>lectures</div>
+                    </div>
+                    {/* Expand arrow */}
+                    <div style={{color:'var(--text3)',fontSize:18,transition:'transform 0.2s',transform:isExpanded?'rotate(180deg)':'rotate(0deg)'}}>
+                      ▾
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Lectures */}
+                {isExpanded && (
+                  <div style={{marginTop:16,borderTop:'1px solid var(--border)',paddingTop:14}}>
+                    <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                      {dayData.lectures.map((lecture, idx) => {
+                        const s = statusStyle(lecture.status);
+                        return (
+                          <div key={idx} style={{display:'flex',alignItems:'center',gap:14,padding:'10px 14px',
+                            background:'var(--bg)',borderRadius:9,border:'1px solid var(--border)'}}>
+                            {/* Time */}
+                            <div style={{minWidth:110,fontSize:12,fontWeight:600,color:'var(--text3)',
+                              fontFamily:'DM Mono'}}>
+                              {lecture.time}
+                            </div>
+                            {/* Subject color dot */}
+                            <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+                              background:lecture.status==='present'?'var(--green)':lecture.status==='absent'?'var(--red)':'var(--amber)'}}/>
+                            {/* Subject + Teacher */}
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>{lecture.subject}</div>
+                              <div style={{fontSize:12,color:'var(--text3)',marginTop:2}}>👤 {lecture.teacher}</div>
+                            </div>
+                            {/* Status Badge */}
+                            <div style={{padding:'5px 14px',borderRadius:20,background:s.bg,color:s.color,
+                              fontSize:13,fontWeight:600,whiteSpace:'nowrap'}}>
+                              {s.label}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Day footer summary */}
+                    <div style={{display:'flex',gap:16,marginTop:12,padding:'10px 14px',
+                      background:dayPresent===dayTotal?'var(--green-bg)':dayPresent===0?'var(--red-bg)':'var(--amber-bg)',
+                      borderRadius:8}}>
+                      <span style={{fontSize:13,fontWeight:500,
+                        color:dayPresent===dayTotal?'var(--green)':dayPresent===0?'var(--red)':'var(--amber)'}}>
+                        {dayPresent===dayTotal ? '🎉 Full attendance! Great job!' :
+                         dayPresent===0 ? '⚠️ No attendance this day — contact teacher' :
+                         `📌 ${dayTotal-dayPresent} lecture${dayTotal-dayPresent>1?'s':''} absent`}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── SUBJECT-WISE SUMMARY ── */}
+      {activeTab === 'subject' && (
+        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+          {Object.entries(subjectMap).map(([subject, data]) => {
+            const pct = data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
+            const color = pct>=75?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+            const needed = pct < 75 ? Math.ceil((0.75*data.total - data.present) / 0.25) : 0;
+            return (
+              <div key={subject} className="card" style={{padding:'16px 20px'}}>
+                <div style={{display:'flex',alignItems:'center',gap:16}}>
+                  {/* Circle % */}
+                  <div style={{width:56,height:56,borderRadius:'50%',border:`3px solid ${color}`,
+                    display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,background:pct>=75?'var(--green-bg)':pct>=60?'var(--amber-bg)':'var(--red-bg)'}}>
+                    <span style={{fontSize:14,fontWeight:700,color}}>{pct}%</span>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                      <span style={{fontSize:15,fontWeight:600,color:'var(--text)'}}>{subject}</span>
+                      <div style={{display:'flex',gap:8}}>
+                        <span className="chip badge-green" style={{fontSize:12}}>✓ {data.present} Present</span>
+                        <span className="chip badge-red" style={{fontSize:12}}>✗ {data.absent} Absent</span>
+                        {data.holiday>0 && <span className="chip badge-amber" style={{fontSize:12}}>— {data.holiday} Holiday</span>}
+                      </div>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="progress-bar" style={{height:8}}>
+                      <div className="progress-fill" style={{width:pct+'%',background:color}}/>
+                    </div>
+                    <div style={{display:'flex',justifyContent:'space-between',marginTop:6}}>
+                      <span style={{fontSize:12,color:'var(--text3)'}}>{data.present} / {data.total} classes attended</span>
+                      {needed > 0 ? (
+                        <span style={{fontSize:12,color:'var(--red)',fontWeight:500}}>
+                          ⚠ {needed} aur attend karo 75% ke liye
+                        </span>
+                      ) : (
+                        <span style={{fontSize:12,color:'var(--green)',fontWeight:500}}>✓ Safe zone</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Overall summary card */}
+          <div className="card" style={{background:overallPct>=75?'var(--green-bg)':'var(--red-bg)',border:`1px solid ${overallPct>=75?'#bbf7d0':'#fecaca'}`}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div>
+                <div style={{fontSize:15,fontWeight:700,color:overallPct>=75?'var(--green)':'var(--red)'}}>
+                  {overallPct>=75 ? '🎉 Overall Attendance Theek Hai!' : '⚠️ Overall Attendance Kam Hai!'}
+                </div>
+                <div style={{fontSize:13,color:overallPct>=75?'var(--green)':'var(--red)',marginTop:4}}>
+                  {overallPct>=75 ? 'Badhaai ho! Aap 75% threshold se upar hain.' : 'Kripya aur classes attend karo.'}
+                </div>
+              </div>
+              <div style={{fontSize:32,fontWeight:800,color:overallPct>=75?'var(--green)':'var(--red)'}}>
+                {overallPct}%
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -801,46 +971,388 @@ function TeacherDashboard({ user }) {
   );
 }
 
-// ─── Class Attendance Entry ───────────────────────────────────────────────────
+// ─── Teacher: Class Attendance — Lecture Wise ────────────────────────────────
+
+// Saved attendance records: { "date_subject_div": { studentId: 'present'/'absent' } }
+const SAVED_RECORDS = {};
+
+// Teacher ka schedule
+const TEACHER_SCHEDULE = {
+  Monday:    [{time:'9:00 - 10:00', subject:'Data Structures', div:'A'},{time:'11:00 - 12:00', subject:'Algorithms', div:'A'},{time:'2:00 - 3:00', subject:'DBMS', div:'B'},{time:'3:00 - 4:00', subject:'Data Structures', div:'B'}],
+  Tuesday:   [{time:'9:00 - 10:00', subject:'Computer Networks', div:'A'},{time:'2:00 - 3:00', subject:'Algorithms', div:'B'},{time:'4:00 - 5:00', subject:'DBMS', div:'A'}],
+  Wednesday: [{time:'9:00 - 10:00', subject:'Data Structures', div:'A'},{time:'11:00 - 12:00', subject:'DBMS', div:'A'},{time:'2:00 - 3:00', subject:'Algorithms', div:'B'}],
+  Thursday:  [{time:'9:00 - 10:00', subject:'Algorithms', div:'A'},{time:'11:00 - 12:00', subject:'Computer Networks', div:'B'},{time:'4:00 - 5:00', subject:'Project Work', div:'A'}],
+  Friday:    [{time:'9:00 - 10:00', subject:'Data Structures', div:'B'},{time:'2:00 - 4:00', subject:'CN Lab', div:'A'}],
+};
+
+const TODAY_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
 function ClassAttendancePage() {
-  const [selected, setSelected] = useState({});
-  const [saved, setSaved] = useState(false);
-  const toggle = (id) => setSelected(p=>({...p,[id]:!p[id]}));
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false),2500); };
+  const todayName = TODAY_DAYS[new Date().getDay()] || 'Monday';
+  const [activeTab, setActiveTab]     = useState('mark');   // 'mark' | 'history'
+  const [selectedDay, setSelectedDay] = useState(todayName === 'Sunday' || todayName === 'Saturday' ? 'Monday' : todayName);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [activeLecture, setActiveLecture] = useState(null); // { time, subject, div }
+  const [attendance, setAttendance]   = useState({});       // { studentId: 'present'|'absent' }
+  const [savedRecords, setSavedRecords] = useState({});     // { key: { studentId: status, ... } }
+  const [toast, setToast]             = useState('');
+
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3000); };
+
+  const daySchedule = TEACHER_SCHEDULE[selectedDay] || [];
+  const classStudents = STUDENTS.filter(s => s.branch === 'CS');
+
+  // Jab lecture select ho
+  const openLecture = (lec) => {
+    setActiveLecture(lec);
+    const key = `${selectedDate}_${lec.subject}_${lec.div}`;
+    const existing = savedRecords[key] || {};
+    // Default: sab absent
+    const init = {};
+    classStudents.filter(s => s.div === lec.div || lec.div === 'All').forEach(s => {
+      init[s.id] = existing[s.id] || 'absent';
+    });
+    setAttendance(init);
+  };
+
+  const toggleStudent = (id) => {
+    setAttendance(p => ({ ...p, [id]: p[id] === 'present' ? 'absent' : 'present' }));
+  };
+
+  const markAll = (status) => {
+    const upd = {};
+    Object.keys(attendance).forEach(id => upd[id] = status);
+    setAttendance(upd);
+  };
+
+  const saveLecture = () => {
+    if (!activeLecture) return;
+    const key = `${selectedDate}_${activeLecture.subject}_${activeLecture.div}`;
+    setSavedRecords(p => ({ ...p, [key]: { ...attendance } }));
+    const presentCount = Object.values(attendance).filter(v => v === 'present').length;
+    const total = Object.keys(attendance).length;
+    showToast(`✅ ${activeLecture.subject} (Div ${activeLecture.div}) — ${presentCount}/${total} present — Saved!`);
+    setActiveLecture(null);
+  };
+
+  const getLectureStatus = (lec) => {
+    const key = `${selectedDate}_${lec.subject}_${lec.div}`;
+    return savedRecords[key] ? 'saved' : 'pending';
+  };
+
+  const getLectureSummary = (lec) => {
+    const key = `${selectedDate}_${lec.subject}_${lec.div}`;
+    const rec = savedRecords[key];
+    if (!rec) return null;
+    const present = Object.values(rec).filter(v => v === 'present').length;
+    const total = Object.values(rec).length;
+    return { present, total };
+  };
+
+  const lecStudents = activeLecture
+    ? classStudents.filter(s => s.div === activeLecture.div)
+    : [];
+
+  const presentCount = Object.values(attendance).filter(v => v === 'present').length;
+  const totalCount   = Object.keys(attendance).length;
+
   return (
     <div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+      {/* Toast */}
+      {toast && (
+        <div style={{position:'fixed',top:20,right:20,zIndex:999,background:'var(--text)',color:'var(--surface)',
+          padding:'12px 20px',borderRadius:10,fontSize:14,fontWeight:500,boxShadow:'0 4px 16px rgba(0,0,0,0.18)'}}>
+          {toast}
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div style={{display:'flex',gap:4,background:'var(--surface2)',borderRadius:10,padding:4,marginBottom:20,width:'fit-content'}}>
+        {[['mark','📋 Attendance Mark Karo'],['history','📅 History Dekho']].map(([tab,label])=>(
+          <button key={tab} onClick={()=>setActiveTab(tab)}
+            style={{padding:'8px 18px',borderRadius:8,border:'none',cursor:'pointer',fontSize:13,fontWeight:500,
+              background:activeTab===tab?'var(--surface)':'transparent',
+              color:activeTab===tab?'var(--text)':'var(--text3)',
+              boxShadow:activeTab===tab?'0 1px 3px rgba(0,0,0,0.08)':'none',transition:'all 0.15s'}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ══ TAB 1: MARK ATTENDANCE ══ */}
+      {activeTab === 'mark' && !activeLecture && (
         <div>
-          <div style={{fontSize:16,fontWeight:600}}>Mark Attendance</div>
-          <div style={{fontSize:13,color:'var(--text3)'}}>Data Structures — CS-A — Today</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setSelected(Object.fromEntries(STUDENTS.map(s=>[s.id,true])))}>Mark All Present</button>
-          <button className="btn btn-primary btn-sm" onClick={save}><Icon name="check" size={14} color="white"/> Save Attendance</button>
-        </div>
-      </div>
-      {saved && <div style={{background:'var(--green-bg)',color:'var(--green)',padding:'10px 16px',borderRadius:9,marginBottom:16,fontSize:14,fontWeight:500}}>✓ Attendance saved successfully!</div>}
-      <div className="card">
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Roll No</th><th>Name</th><th>Branch</th><th>Division</th><th>Status</th></tr></thead>
-            <tbody>
-              {STUDENTS.filter(s=>s.branch==='CS').map(s=>(
-                <tr key={s.id}>
-                  <td style={{fontFamily:'DM Mono',fontSize:13}}>{s.rollNo}</td>
-                  <td style={{fontWeight:500}}>{s.name}</td>
-                  <td>{s.branch}</td><td>{s.div}</td>
-                  <td>
-                    <button onClick={()=>toggle(s.id)} className={`chip ${selected[s.id]?'badge-green':'badge-red'}`} style={{cursor:'pointer',border:'none'}}>
-                      {selected[s.id]?'Present':'Absent'}
+          {/* Day + Date selector */}
+          <div className="card" style={{marginBottom:20}}>
+            <div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap'}}>
+              <div style={{flex:1,minWidth:200}}>
+                <label className="form-label">📅 Date Select Karo</label>
+                <input type="date" className="form-input" value={selectedDate}
+                  onChange={e => setSelectedDate(e.target.value)} style={{maxWidth:220}}/>
+              </div>
+              <div style={{flex:1,minWidth:200}}>
+                <label className="form-label">📆 Din Select Karo</label>
+                <select className="form-input" value={selectedDay} onChange={e=>setSelectedDay(e.target.value)} style={{maxWidth:220}}>
+                  {['Monday','Tuesday','Wednesday','Thursday','Friday'].map(d=>(
+                    <option key={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{paddingTop:20}}>
+                <span className="chip badge-blue">{daySchedule.length} lectures scheduled</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Today's Stats */}
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:20}}>
+            <div className="stat-card">
+              <div className="stat-label">Total Lectures</div>
+              <div className="stat-value">{daySchedule.length}</div>
+              <div className="stat-sub" style={{color:'var(--text3)'}}>{selectedDay}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Marked</div>
+              <div className="stat-value" style={{color:'var(--green)'}}>
+                {daySchedule.filter(l => getLectureStatus(l) === 'saved').length}
+              </div>
+              <div className="stat-sub"><span className="stat-badge badge-green">Saved ho gaye</span></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Pending</div>
+              <div className="stat-value" style={{color:'var(--amber)'}}>
+                {daySchedule.filter(l => getLectureStatus(l) === 'pending').length}
+              </div>
+              <div className="stat-sub"><span className="stat-badge badge-amber">Abhi mark karo</span></div>
+            </div>
+          </div>
+
+          {/* Lecture Cards */}
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            {daySchedule.length === 0 ? (
+              <div className="card" style={{textAlign:'center',padding:40,color:'var(--text3)'}}>
+                🎉 Aaj koi lecture nahi hai!
+              </div>
+            ) : daySchedule.map((lec, idx) => {
+              const status = getLectureStatus(lec);
+              const summary = getLectureSummary(lec);
+              const subjectColors = {
+                'Data Structures':['var(--accent-bg)','var(--accent)'],
+                'Algorithms':['var(--purple-bg)','var(--purple)'],
+                'DBMS':['var(--green-bg)','var(--green)'],
+                'Computer Networks':['var(--amber-bg)','var(--amber)'],
+                'Operating Systems':['var(--red-bg)','var(--red)'],
+                'CN Lab':['var(--amber-bg)','var(--amber)'],
+                'Project Work':['var(--surface2)','var(--text3)'],
+              };
+              const [sbg, sfg] = subjectColors[lec.subject] || ['var(--surface2)','var(--text2)'];
+
+              return (
+                <div key={idx} className="card" style={{padding:'16px 20px',
+                  border: status==='saved' ? '1.5px solid #bbf7d0' : '1px solid var(--border)'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:16}}>
+                    {/* Lecture number */}
+                    <div style={{width:36,height:36,borderRadius:9,background:sbg,
+                      display:'flex',alignItems:'center',justifyContent:'center',
+                      fontSize:13,fontWeight:700,color:sfg,flexShrink:0}}>
+                      L{idx+1}
+                    </div>
+
+                    {/* Subject + Time + Div */}
+                    <div style={{flex:1}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                        <span style={{fontSize:15,fontWeight:600,color:'var(--text)'}}>{lec.subject}</span>
+                        <span className="chip badge-blue" style={{fontSize:11}}>Div {lec.div}</span>
+                        {status === 'saved' && <span className="chip badge-green" style={{fontSize:11}}>✓ Saved</span>}
+                        {status === 'pending' && <span className="chip badge-amber" style={{fontSize:11}}>⏳ Pending</span>}
+                      </div>
+                      <div style={{display:'flex',gap:16,fontSize:12,color:'var(--text3)'}}>
+                        <span>⏰ {lec.time}</span>
+                        <span>👥 {classStudents.filter(s=>s.div===lec.div).length} students</span>
+                        {summary && (
+                          <span style={{color:'var(--green)',fontWeight:500}}>
+                            ✓ {summary.present}/{summary.total} present
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <button
+                      className={`btn ${status==='saved'?'btn-secondary':'btn-primary'} btn-sm`}
+                      onClick={() => openLecture(lec)}>
+                      {status === 'saved' ? '✏️ Edit' : '📋 Mark Karo'}
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ══ ATTENDANCE MARKING SCREEN ══ */}
+      {activeTab === 'mark' && activeLecture && (
+        <div>
+          {/* Header */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <button onClick={()=>setActiveLecture(null)}
+                style={{border:'1px solid var(--border)',background:'var(--surface)',borderRadius:8,
+                  padding:'6px 12px',cursor:'pointer',fontSize:13,color:'var(--text2)'}}>
+                ← Back
+              </button>
+              <div>
+                <div style={{fontSize:16,fontWeight:700}}>{activeLecture.subject}</div>
+                <div style={{fontSize:12,color:'var(--text3)'}}>
+                  ⏰ {activeLecture.time} &nbsp;|&nbsp; Div {activeLecture.div} &nbsp;|&nbsp; {selectedDate}
+                </div>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <div style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>
+                <span style={{color:'var(--green)'}}>{presentCount}</span>
+                <span style={{color:'var(--text3)'}}> / {totalCount} present</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick action buttons */}
+          <div style={{display:'flex',gap:10,marginBottom:16}}>
+            <button className="btn btn-secondary btn-sm" onClick={()=>markAll('present')}>
+              ✅ Sab Present
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={()=>markAll('absent')}>
+              ❌ Sab Absent
+            </button>
+            <div style={{flex:1}}/>
+            <button className="btn btn-primary" onClick={saveLecture}>
+              <Icon name="check" size={14} color="white"/> Attendance Save Karo
+            </button>
+          </div>
+
+          {/* Present/Absent summary bar */}
+          <div style={{display:'flex',gap:8,marginBottom:16}}>
+            <div style={{flex:presentCount,height:8,background:'var(--green)',borderRadius:'99px 0 0 99px',
+              transition:'flex 0.3s',minWidth:presentCount>0?4:0}}/>
+            <div style={{flex:totalCount-presentCount,height:8,background:'var(--red)',
+              borderRadius:presentCount>0?'0 99px 99px 0':'99px',transition:'flex 0.3s',
+              minWidth:totalCount-presentCount>0?4:0}}/>
+          </div>
+
+          {/* Students list */}
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {lecStudents.map((student, idx) => {
+              const status = attendance[student.id] || 'absent';
+              const isPresent = status === 'present';
+              return (
+                <div key={student.id}
+                  onClick={() => toggleStudent(student.id)}
+                  style={{display:'flex',alignItems:'center',gap:14,padding:'12px 16px',
+                    background: isPresent ? 'var(--green-bg)' : 'var(--surface)',
+                    border: `1.5px solid ${isPresent ? '#86efac' : 'var(--border)'}`,
+                    borderRadius:10,cursor:'pointer',transition:'all 0.15s',userSelect:'none'}}>
+
+                  {/* Sr. No */}
+                  <div style={{width:28,height:28,borderRadius:'50%',
+                    background: isPresent ? 'var(--green)' : 'var(--surface2)',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    fontSize:12,fontWeight:700,color: isPresent ? 'white' : 'var(--text3)',flexShrink:0}}>
+                    {idx+1}
+                  </div>
+
+                  {/* Name + Roll */}
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>{student.name}</div>
+                    <div style={{fontSize:12,color:'var(--text3)',fontFamily:'DM Mono'}}>
+                      {student.rollNo} &nbsp;·&nbsp; Div {student.div}
+                    </div>
+                  </div>
+
+                  {/* Toggle Button */}
+                  <div style={{padding:'6px 18px',borderRadius:20,fontWeight:700,fontSize:13,
+                    background: isPresent ? 'var(--green)' : 'var(--red-bg)',
+                    color: isPresent ? 'white' : 'var(--red)',
+                    border: `1.5px solid ${isPresent ? 'var(--green)' : '#fca5a5'}`,
+                    transition:'all 0.15s'}}>
+                    {isPresent ? '✓ Present' : '✗ Absent'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bottom Save Button */}
+          <div style={{marginTop:20,padding:'16px',background:'var(--surface)',
+            border:'1px solid var(--border)',borderRadius:12,display:'flex',
+            alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{fontSize:14,color:'var(--text2)'}}>
+              <span style={{fontWeight:600,color:'var(--green)'}}>{presentCount} Present</span>
+              {' · '}
+              <span style={{fontWeight:600,color:'var(--red)'}}>{totalCount - presentCount} Absent</span>
+              {' · '}
+              <span>{totalCount} Total</span>
+            </div>
+            <button className="btn btn-primary" onClick={saveLecture}>
+              <Icon name="check" size={14} color="white"/> Save Karo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══ TAB 2: HISTORY ══ */}
+      {activeTab === 'history' && (
+        <div>
+          {Object.keys(savedRecords).length === 0 ? (
+            <div className="card" style={{textAlign:'center',padding:48,color:'var(--text3)'}}>
+              <div style={{fontSize:32,marginBottom:12}}>📋</div>
+              <div style={{fontSize:15,fontWeight:600,marginBottom:6}}>Abhi koi attendance saved nahi hai</div>
+              <div style={{fontSize:13}}>"Attendance Mark Karo" tab mein jaake pehle mark karo</div>
+            </div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
+              {Object.entries(savedRecords).map(([key, record]) => {
+                const [date, subject, div] = key.split('_');
+                const present = Object.values(record).filter(v=>v==='present').length;
+                const total = Object.values(record).length;
+                const pct = Math.round((present/total)*100);
+                return (
+                  <div key={key} className="card" style={{padding:'16px 20px'}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                      <div>
+                        <div style={{fontSize:15,fontWeight:600}}>{subject} — Div {div}</div>
+                        <div style={{fontSize:12,color:'var(--text3)',marginTop:3}}>📅 {date}</div>
+                      </div>
+                      <div style={{textAlign:'right'}}>
+                        <div style={{fontSize:22,fontWeight:800,
+                          color:pct>=75?'var(--green)':pct>=50?'var(--amber)':'var(--red)'}}>{pct}%</div>
+                        <div style={{fontSize:12,color:'var(--text3)'}}>{present}/{total} present</div>
+                      </div>
+                    </div>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{width:pct+'%',
+                        background:pct>=75?'var(--green)':pct>=50?'var(--amber)':'var(--red)'}}/>
+                    </div>
+                    {/* Student list */}
+                    <div style={{marginTop:12,display:'flex',flexWrap:'wrap',gap:6}}>
+                      {Object.entries(record).map(([sid, st]) => {
+                        const stu = STUDENTS.find(s=>s.id===parseInt(sid));
+                        if(!stu) return null;
+                        return (
+                          <span key={sid} className={`chip ${st==='present'?'badge-green':'badge-red'}`}
+                            style={{fontSize:12}}>
+                            {st==='present'?'✓':'✗'} {stu.name.split(' ')[0]}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -938,115 +1450,21 @@ function StudentsPage() {
   const [students, setStudents] = useState(STUDENTS);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({name:'',rollNo:'',semester:'',branch:'',div:'',email:'',phone:'',password:'',status:'active'});
+  const [form, setForm] = useState({name:'',rollNo:'',semester:'',branch:'',div:'',email:'',phone:'',status:'active'});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const token = localStorage.getItem('token');
 
   const filtered = students.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.rollNo.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openAdd = () => { setForm({name:'',rollNo:'',semester:'4th',branch:'CS',div:'A',email:'',phone:'',password:'',status:'active'}); setError(''); setModal('add'); };
-  const openEdit = (s) => { setForm({...s,password:''}); setError(''); setModal('edit'); };
-  
-  const save = async () => {
-    setError('');
-    
-    // Validation
-    if (!form.name || !form.rollNo || !form.email) {
-      setError('Name, roll number, and email are required');
-      return;
-    }
-
-    if (modal === 'add' && !form.password) {
-      setError('Password is required for new students');
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) {
-      setError('Please enter a valid email');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      if (modal === 'add') {
-        // Create student with User account
-        const payload = {
-          name: form.name,
-          rollNo: form.rollNo,
-          semester: form.semester,
-          branch: form.branch,
-          division: form.div,
-          email: form.email,
-          phone: form.phone,
-          password: form.password,
-          status: form.status
-        };
-
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/students`, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
-            body: JSON.stringify(payload)
-          });
-
-          let data;
-          try {
-            data = await res.json();
-          } catch (e) {
-            data = { message: `Server returned invalid JSON: ${res.status}` };
-          }
-
-          if (!res.ok) {
-            throw new Error(data.message || `Server error: ${res.status}`);
-          }
-
-          // Add to local state
-          setStudents(p => [...p, {
-            id: Date.now(),
-            name: form.name,
-            rollNo: form.rollNo,
-            semester: form.semester,
-            branch: form.branch,
-            div: form.div,
-            email: form.email,
-            phone: form.phone,
-            status: form.status
-          }]);
-
-          // Show credentials alert
-          alert(`Student Created Successfully!\n\nLogin Credentials:\nEmail: ${form.email}\nPassword: ${form.password}\n\n⚠️  Please share these credentials with the student. They can change the password after first login.`);
-        } catch (err) {
-          let errorMsg = err.message;
-          if (err instanceof TypeError) {
-            errorMsg = `Network error: Cannot reach server at ${API_BASE_URL}. Check if backend is running on port 5000.`;
-          } else if (err.message.includes('Failed to fetch')) {
-            errorMsg = `Connection failed to ${API_BASE_URL}. Make sure backend is running.`;
-          }
-          throw new Error(errorMsg);
-        }
-      } else {
-        // Edit student (without password)
-        const editData = {...form};
-        delete editData.password;
-        setStudents(p => p.map(s => s.id === form.id ? {...form, rollNo:form.rollNo} : s));
-      }
-
-      setModal(null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const openAdd = () => { setForm({name:'',rollNo:'',semester:'4th',branch:'CS',div:'A',email:'',phone:'',status:'active'}); setModal('add'); };
+  const openEdit = (s) => { setForm({...s}); setModal('edit'); };
+  const save = () => {
+    if(modal==='add') setStudents(p=>[...p,{...form,id:Date.now()}]);
+    else setStudents(p=>p.map(s=>s.id===form.id?form:s));
+    setModal(null);
   };
-
   const del = (id) => { setStudents(p=>p.filter(s=>s.id!==id)); setDeleteConfirm(null); };
 
   return (
@@ -1091,7 +1509,6 @@ function StudentsPage() {
               <div className="modal-title" style={{margin:0}}>{modal==='add'?'Add New Student':'Edit Student'}</div>
               <button onClick={()=>setModal(null)} style={{border:'none',background:'none',cursor:'pointer',color:'var(--text3)'}}><Icon name="close" size={18}/></button>
             </div>
-            {error && <div style={{padding:'10px',background:'var(--red-bg)',color:'var(--red)',borderRadius:'6px',marginBottom:'14px',fontSize:'13px'}}>{error}</div>}
             <div className="grid-2" style={{gap:14}}>
               {[['name','Full Name','text'],['rollNo','Roll Number','text'],['email','Email','email'],['phone','Phone','text']].map(([field,label,type])=>(
                 <div className="form-group" key={field} style={{marginBottom:0}}>
@@ -1099,12 +1516,6 @@ function StudentsPage() {
                   <input className="form-input" type={type} value={form[field]} onChange={e=>setForm(p=>({...p,[field]:e.target.value}))}/>
                 </div>
               ))}
-              {modal === 'add' && (
-                <div className="form-group" style={{marginBottom:0}}>
-                  <label className="form-label">Temporary Password *</label>
-                  <input className="form-input" type="password" value={form.password} onChange={e=>setForm(p=>({...p,password:e.target.value}))} placeholder="Student will use this to login"/>
-                </div>
-              )}
               <div className="form-group" style={{marginBottom:0}}>
                 <label className="form-label">Branch</label>
                 <select className="form-input" value={form.branch} onChange={e=>setForm(p=>({...p,branch:e.target.value}))}>
@@ -1131,8 +1542,8 @@ function StudentsPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={()=>setModal(null)} disabled={loading}>Cancel</button>
-              <button className="btn btn-primary" onClick={save} disabled={loading}>{loading?'Saving...':modal==='add'?'Add Student':'Save Changes'}</button>
+              <button className="btn btn-secondary" onClick={()=>setModal(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>{modal==='add'?'Add Student':'Save Changes'}</button>
             </div>
           </div>
         </div>
@@ -1154,144 +1565,239 @@ function StudentsPage() {
   );
 }
 
-// ─── Admin Teachers Page ──────────────────────────────────────────────────────
-function TeachersPage() {
-  const [teachers, setTeachers] = useState([
-    {id:1,name:'Prof. Anjali Singh',department:'CS',subjects:['Data Structures', 'Algorithms', 'DBMS'],experience:8,email:'anjali@edu.com'},
-    {id:2,name:'Dr. Suresh Nair',department:'CS',subjects:['Computer Networks', 'OS'],experience:12,email:'suresh@edu.com'},
-    {id:3,name:'Prof. Meena Rao',department:'IT',subjects:['Web Tech', 'Java'],experience:6,email:'meena@edu.com'},
-    {id:4,name:'Dr. Alok Gupta',department:'ME',subjects:['Thermodynamics', 'Fluid Mechanics'],experience:15,email:'alok@edu.com'},
-    {id:5,name:'Prof. Rekha Soni',department:'EE',subjects:['Circuit Theory', 'Power Systems'],experience:9,email:'rekha@edu.com'},
-    {id:6,name:'Dr. Vijay Kumar',department:'EC',subjects:['Microprocessors', 'VLSI Design'],experience:11,email:'vijay@edu.com'},
-  ]);
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [formData, setFormData] = useState({name:'',email:'',phone:'',department:'',subjects:'',qualifications:'',experience:0});
-  const token = localStorage.getItem('token');
+// ─── Admin Teachers Page (Full CRUD) ─────────────────────────────────────────
+const INITIAL_TEACHERS = [
+  {id:1,name:'Prof. Anjali Singh',dept:'CS',designation:'Associate Professor',subjects:'Data Structures, Algorithms, DBMS',exp:'8',email:'anjali@edu.com',phone:'9876543001',status:'active'},
+  {id:2,name:'Dr. Suresh Nair',dept:'CS',designation:'Professor',subjects:'Computer Networks, OS',exp:'12',email:'suresh@edu.com',phone:'9876543002',status:'active'},
+  {id:3,name:'Prof. Meena Rao',dept:'IT',designation:'Assistant Professor',subjects:'Web Tech, Java',exp:'6',email:'meena@edu.com',phone:'9876543003',status:'active'},
+  {id:4,name:'Dr. Alok Gupta',dept:'ME',designation:'Professor',subjects:'Thermodynamics, Fluid Mechanics',exp:'15',email:'alok@edu.com',phone:'9876543004',status:'active'},
+  {id:5,name:'Prof. Rekha Soni',dept:'EE',designation:'Assistant Professor',subjects:'Circuit Theory, Power Systems',exp:'9',email:'rekha@edu.com',phone:'9876543005',status:'active'},
+];
 
-  const handleInputChange = (e) => {
-    const {name, value} = e.target;
-    setFormData(prev=>({...prev,[name]:value}));
+function TeachersPage() {
+  const [teachers, setTeachers] = useState(INITIAL_TEACHERS);
+  const [search, setSearch] = useState('');
+  const [modal, setModal] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [form, setForm] = useState({name:'',dept:'CS',designation:'Assistant Professor',subjects:'',exp:'',email:'',phone:'',status:'active'});
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),2500); };
+
+  const filtered = teachers.filter(t =>
+    t.name.toLowerCase().includes(search.toLowerCase()) ||
+    t.dept.toLowerCase().includes(search.toLowerCase()) ||
+    t.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const openAdd = () => {
+    setForm({name:'',dept:'CS',designation:'Assistant Professor',subjects:'',exp:'',email:'',phone:'',status:'active'});
+    setModal('add');
+  };
+  const openEdit = (t) => { setForm({...t}); setModal('edit'); };
+
+  const save = () => {
+    if(!form.name || !form.email) return alert('Name aur Email required hai!');
+    if(modal==='add') {
+      setTeachers(p=>[...p,{...form,id:Date.now()}]);
+      showToast('✅ Teacher successfully add ho gaya!');
+    } else {
+      setTeachers(p=>p.map(t=>t.id===form.id?form:t));
+      showToast('✅ Teacher details update ho gayi!');
+    }
+    setModal(null);
   };
 
-  const handleAddTeacher = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const subjectsArray = formData.subjects.split(',').map(s=>s.trim()).filter(s=>s);
-      const payload = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        department: formData.department,
-        subjects: subjectsArray,
-        qualifications: formData.qualifications,
-        experience: parseInt(formData.experience) || 0,
-        status: 'active'
-      };
-      const res = await fetch(`${API_BASE_URL}/api/teachers`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to add teacher');
-      setTeachers(prev=>[...prev, {id:teachers.length+1, ...data}]);
-      setFormData({name:'',email:'',phone:'',department:'',subjects:'',qualifications:'',experience:0});
-      setShowForm(false);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const del = (id) => {
+    setTeachers(p=>p.filter(t=>t.id!==id));
+    setDeleteConfirm(null);
+    showToast('🗑️ Teacher delete ho gaya!');
   };
 
   return (
     <div>
-      {showForm && (
-        <div className="card" style={{marginBottom:20}}>
-          <div className="card-header"><div className="card-title">Add New Teacher</div></div>
-          {error && <div style={{padding:'12px',background:'var(--red-bg)',color:'var(--red)',borderRadius:'8px',marginBottom:'16px',fontSize:'14px'}}>{error}</div>}
-          <form onSubmit={handleAddTeacher}>
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Full Name *</label>
-                <input className="form-input" type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Prof. Name" required/>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Email *</label>
-                <input className="form-input" type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="teacher@edu.com" required/>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Phone</label>
-                <input className="form-input" type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="+91 XXXXX XXXXX"/>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Department *</label>
-                <select className="form-input" name="department" value={formData.department} onChange={handleInputChange} required>
-                  <option value="">Select Department</option>
-                  <option value="CS">Computer Science</option>
-                  <option value="IT">Information Technology</option>
-                  <option value="ME">Mechanical Engineering</option>
-                  <option value="CE">Civil Engineering</option>
-                  <option value="EE">Electrical Engineering</option>
-                  <option value="EC">Electronics & Communication</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Subjects (comma separated)</label>
-                <input className="form-input" type="text" name="subjects" value={formData.subjects} onChange={handleInputChange} placeholder="Data Structures, Algorithms, DBMS"/>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Experience (years)</label>
-                <input className="form-input" type="number" name="experience" value={formData.experience} onChange={handleInputChange} placeholder="0" min="0"/>
-              </div>
-              <div className="form-group" style={{gridColumn:'1/-1'}}>
-                <label className="form-label">Qualifications</label>
-                <input className="form-input" type="text" name="qualifications" value={formData.qualifications} onChange={handleInputChange} placeholder="B.Tech, M.Tech, PhD"/>
-              </div>
-            </div>
-            <div style={{display:'flex',gap:10,marginTop:16}}>
-              <button type="submit" className="btn btn-primary" disabled={loading}>{loading?'Adding...':'Add Teacher'}</button>
-              <button type="button" className="btn btn-secondary" onClick={()=>setShowForm(false)} disabled={loading}>Cancel</button>
-            </div>
-          </form>
+      {/* Toast */}
+      {toast && (
+        <div style={{position:'fixed',top:20,right:20,background:'var(--text)',color:'var(--surface)',padding:'12px 20px',borderRadius:10,fontSize:14,fontWeight:500,zIndex:999,boxShadow:'0 4px 12px rgba(0,0,0,0.15)'}}>
+          {toast}
         </div>
       )}
+
+      {/* Stats */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:20}}>
+        {[
+          {label:'Total Teachers', value:teachers.length, badge:'badge-blue', sub:'All faculty'},
+          {label:'Active', value:teachers.filter(t=>t.status==='active').length, badge:'badge-green', sub:'Currently teaching'},
+          {label:'Departments', value:[...new Set(teachers.map(t=>t.dept))].length, badge:'badge-purple', sub:'Covered'},
+          {label:'Inactive', value:teachers.filter(t=>t.status==='inactive').length, badge:'badge-red', sub:'On leave/inactive'},
+        ].map(s=>(
+          <div key={s.label} className="stat-card">
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value">{s.value}</div>
+            <div className="stat-sub"><span className={`stat-badge ${s.badge}`}>{s.sub}</span></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search + Add Button */}
+      <div style={{display:'flex',gap:12,marginBottom:20,alignItems:'center'}}>
+        <div style={{flex:1,position:'relative'}}>
+          <div style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:0.4}}>
+            <Icon name="search" size={15}/>
+          </div>
+          <input className="form-input" placeholder="Search by name, department, email…" value={search} onChange={e=>setSearch(e.target.value)} style={{paddingLeft:36}}/>
+        </div>
+        <button className="btn btn-primary" onClick={openAdd}>
+          <Icon name="plus" size={15} color="white"/> Add Teacher
+        </button>
+      </div>
+
+      {/* Table */}
       <div className="card">
         <div className="card-header">
           <div className="card-title">Faculty Members</div>
-          <button className="btn btn-primary btn-sm" onClick={()=>setShowForm(!showForm)}>+ {showForm?'Hide':'Add Teacher'}</button>
+          <span className="chip badge-blue">{filtered.length} found</span>
         </div>
-        {teachers.length === 0 ? (
-          <div style={{padding:'32px',textAlign:'center',color:'var(--text3)'}}>No teachers found. Click "Add Teacher" to create new faculty.</div>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Name</th><th>Department</th><th>Subjects</th><th>Experience</th><th>Email</th><th style={{width:80}}>Action</th></tr></thead>
-              <tbody>
-                {teachers.map((t,idx)=>(
-                  <tr key={t.id}>
-                    <td>
-                      <div style={{display:'flex',alignItems:'center',gap:10}}>
-                        <div className="avatar" style={{width:34,height:34,background:'var(--purple-bg)',color:'var(--purple)',fontSize:13}}>{t.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
-                        <span style={{fontWeight:500}}>{t.name}</span>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Subjects</th>
+                <th>Experience</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={9} style={{textAlign:'center',color:'var(--text3)',padding:32}}>Koi teacher nahi mila</td></tr>
+              ) : filtered.map(t=>(
+                <tr key={t.id}>
+                  <td>
+                    <div style={{display:'flex',alignItems:'center',gap:10}}>
+                      <div className="avatar" style={{width:34,height:34,background:'var(--purple-bg)',color:'var(--purple)',fontSize:12,flexShrink:0}}>
+                        {t.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
                       </div>
-                    </td>
-                    <td><span className="chip badge-purple">{t.department}</span></td>
-                    <td style={{fontSize:13,color:'var(--text2)',maxWidth:200}}>{Array.isArray(t.subjects)?t.subjects.join(', '):t.subjects}</td>
-                    <td>{t.experience} yrs</td>
-                    <td style={{color:'var(--text3)',fontSize:13}}>{t.email}</td>
-                    <td><button className="btn btn-danger btn-sm" onClick={()=>setTeachers(prev=>prev.filter((_, i)=>i!==idx))}>Delete</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                      <span style={{fontWeight:500}}>{t.name}</span>
+                    </div>
+                  </td>
+                  <td><span className="chip badge-purple">{t.dept}</span></td>
+                  <td style={{fontSize:13,color:'var(--text2)'}}>{t.designation}</td>
+                  <td style={{fontSize:12,color:'var(--text2)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.subjects}</td>
+                  <td style={{fontWeight:500}}>{t.exp} yrs</td>
+                  <td style={{color:'var(--text3)',fontSize:13}}>{t.email}</td>
+                  <td style={{fontSize:13}}>{t.phone}</td>
+                  <td><span className={`chip ${t.status==='active'?'badge-green':'badge-red'}`}>{t.status}</span></td>
+                  <td>
+                    <div style={{display:'flex',gap:6}}>
+                      <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(t)} title="Edit">
+                        <Icon name="edit" size={13}/>
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>setDeleteConfirm(t.id)} title="Delete">
+                        <Icon name="trash" size={13} color="var(--red)"/>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Add / Edit Modal */}
+      {modal && (
+        <div className="modal-overlay" onClick={()=>setModal(null)}>
+          <div className="modal" style={{width:540}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <div className="modal-title" style={{margin:0}}>
+                {modal==='add' ? '➕ Naya Teacher Add Karo' : '✏️ Teacher Details Edit Karo'}
+              </div>
+              <button onClick={()=>setModal(null)} style={{border:'none',background:'none',cursor:'pointer',color:'var(--text3)'}}>
+                <Icon name="close" size={18}/>
+              </button>
+            </div>
+
+            <div className="grid-2" style={{gap:14}}>
+              {/* Name */}
+              <div className="form-group" style={{marginBottom:0}}>
+                <label className="form-label">Full Name *</label>
+                <input className="form-input" placeholder="e.g. Dr. Rahul Sharma" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))}/>
+              </div>
+              {/* Email */}
+              <div className="form-group" style={{marginBottom:0}}>
+                <label className="form-label">Email *</label>
+                <input className="form-input" type="email" placeholder="e.g. rahul@edu.com" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))}/>
+              </div>
+              {/* Phone */}
+              <div className="form-group" style={{marginBottom:0}}>
+                <label className="form-label">Phone</label>
+                <input className="form-input" placeholder="e.g. 9876543210" value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))}/>
+              </div>
+              {/* Department */}
+              <div className="form-group" style={{marginBottom:0}}>
+                <label className="form-label">Department</label>
+                <select className="form-input" value={form.dept} onChange={e=>setForm(p=>({...p,dept:e.target.value}))}>
+                  {['CS','IT','ME','CE','EE','EC','CH','CV'].map(d=><option key={d}>{d}</option>)}
+                </select>
+              </div>
+              {/* Designation */}
+              <div className="form-group" style={{marginBottom:0}}>
+                <label className="form-label">Designation</label>
+                <select className="form-input" value={form.designation} onChange={e=>setForm(p=>({...p,designation:e.target.value}))}>
+                  {['Assistant Professor','Associate Professor','Professor','HOD','Dean','Lecturer'].map(d=><option key={d}>{d}</option>)}
+                </select>
+              </div>
+              {/* Experience */}
+              <div className="form-group" style={{marginBottom:0}}>
+                <label className="form-label">Experience (Years)</label>
+                <input className="form-input" type="number" min="0" max="50" placeholder="e.g. 5" value={form.exp} onChange={e=>setForm(p=>({...p,exp:e.target.value}))}/>
+              </div>
+              {/* Subjects - full width */}
+              <div className="form-group" style={{marginBottom:0,gridColumn:'1/-1'}}>
+                <label className="form-label">Subjects (comma se alag karo)</label>
+                <input className="form-input" placeholder="e.g. Data Structures, Algorithms, DBMS" value={form.subjects} onChange={e=>setForm(p=>({...p,subjects:e.target.value}))}/>
+              </div>
+              {/* Status */}
+              <div className="form-group" style={{marginBottom:0}}>
+                <label className="form-label">Status</label>
+                <select className="form-input" value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setModal(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>
+                {modal==='add' ? '➕ Add Teacher' : '💾 Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      {deleteConfirm && (
+        <div className="modal-overlay" onClick={()=>setDeleteConfirm(null)}>
+          <div className="modal" style={{width:380}} onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">🗑️ Teacher Delete Karo?</div>
+            <p style={{color:'var(--text2)',fontSize:14,lineHeight:1.6}}>
+              Kya aap sure ho? Yeh action undo nahi ho sakta. Teacher ka poora record permanently delete ho jayega.
+            </p>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setDeleteConfirm(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={()=>del(deleteConfirm)}>Haan, Delete Karo</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1357,29 +1863,503 @@ function SettingsPage({ user }) {
   );
 }
 
+
+// ─── Branch Management Page ───────────────────────────────────────────────────
+
+const BRANCHES = [
+  { code:'CS', name:'Computer Science',    color:'var(--accent)',    bg:'var(--accent-bg)',   icon:'💻', hod:'Dr. Ramesh Kumar',    totalStudents:320, totalTeachers:18, semesters:8 },
+  { code:'IT', name:'Information Tech',    color:'var(--purple)',    bg:'var(--purple-bg)',   icon:'🖥️', hod:'Prof. Meena Rao',     totalStudents:280, totalTeachers:15, semesters:8 },
+  { code:'ME', name:'Mechanical Engg',     color:'var(--amber)',     bg:'var(--amber-bg)',    icon:'⚙️', hod:'Dr. Alok Gupta',      totalStudents:220, totalTeachers:14, semesters:8 },
+  { code:'CE', name:'Civil Engg',          color:'var(--green)',     bg:'var(--green-bg)',    icon:'🏗️', hod:'Prof. Sunil Sharma',  totalStudents:180, totalTeachers:12, semesters:8 },
+  { code:'EE', name:'Electrical Engg',     color:'var(--red)',       bg:'var(--red-bg)',      icon:'⚡', hod:'Prof. Rekha Soni',    totalStudents:140, totalTeachers:10, semesters:8 },
+  { code:'EC', name:'Electronics & Comm',  color:'var(--text2)',     bg:'var(--surface2)',    icon:'📡', hod:'Dr. Vijay Patil',     totalStudents:160, totalTeachers:11, semesters:8 },
+];
+
+const BRANCH_STUDENTS_INIT = {
+  CS:[ {id:101,name:'Arjun Mehta',rollNo:'CS2023001',semester:'4th',div:'A',email:'arjun@edu.com',phone:'9876543210',status:'active'},
+       {id:102,name:'Priya Sharma',rollNo:'CS2023002',semester:'4th',div:'A',email:'priya@edu.com',phone:'9876543211',status:'active'},
+       {id:103,name:'Rahul Verma',rollNo:'CS2023003',semester:'4th',div:'B',email:'rahul@edu.com',phone:'9876543212',status:'active'},
+       {id:104,name:'Sneha Patel',rollNo:'CS2023004',semester:'2nd',div:'A',email:'sneha@edu.com',phone:'9876543213',status:'active'},
+       {id:105,name:'Vikram Rao',rollNo:'CS2023005',semester:'6th',div:'B',email:'vikram@edu.com',phone:'9876543214',status:'inactive'} ],
+  IT:[ {id:201,name:'Kavya Nair',rollNo:'IT2023001',semester:'2nd',div:'A',email:'kavya@edu.com',phone:'9876543215',status:'active'},
+       {id:202,name:'Rohan Das',rollNo:'IT2023002',semester:'2nd',div:'B',email:'rohan@edu.com',phone:'9876543216',status:'active'},
+       {id:203,name:'Pooja Singh',rollNo:'IT2023003',semester:'4th',div:'A',email:'pooja@edu.com',phone:'9876543220',status:'active'} ],
+  ME:[ {id:301,name:'Ananya Iyer',rollNo:'ME2023001',semester:'6th',div:'A',email:'ananya@edu.com',phone:'9876543217',status:'active'},
+       {id:302,name:'Ravi Kumar',rollNo:'ME2023002',semester:'4th',div:'A',email:'ravi@edu.com',phone:'9876543218',status:'active'} ],
+  CE:[ {id:401,name:'Neha Tiwari',rollNo:'CE2023001',semester:'2nd',div:'A',email:'neha@edu.com',phone:'9876543219',status:'active'} ],
+  EE:[], EC:[],
+};
+
+const BRANCH_TEACHERS_INIT = {
+  CS:[ {id:1001,name:'Prof. Anjali Singh',designation:'Associate Professor',subjects:'Data Structures, Algorithms',email:'anjali@edu.com',phone:'9876540001',exp:'8',status:'active'},
+       {id:1002,name:'Dr. Suresh Nair',designation:'Professor',subjects:'Computer Networks, OS',email:'suresh@edu.com',phone:'9876540002',exp:'12',status:'active'},
+       {id:1003,name:'Prof. Kavita Joshi',designation:'Assistant Professor',subjects:'DBMS, Software Engg',email:'kavita@edu.com',phone:'9876540003',exp:'4',status:'active'} ],
+  IT:[ {id:2001,name:'Prof. Meena Rao',designation:'Assistant Professor',subjects:'Web Tech, Java',email:'meena@edu.com',phone:'9876540010',exp:'6',status:'active'},
+       {id:2002,name:'Dr. Harsh Shah',designation:'Associate Professor',subjects:'Python, ML',email:'harsh@edu.com',phone:'9876540011',exp:'9',status:'active'} ],
+  ME:[ {id:3001,name:'Dr. Alok Gupta',designation:'Professor',subjects:'Thermodynamics, Fluid Mechanics',email:'alok@edu.com',phone:'9876540020',exp:'15',status:'active'} ],
+  CE:[ {id:4001,name:'Prof. Sunil Sharma',designation:'Associate Professor',subjects:'Structural Engg, Concrete Design',email:'sunil@edu.com',phone:'9876540030',exp:'10',status:'active'} ],
+  EE:[ {id:5001,name:'Prof. Rekha Soni',designation:'Assistant Professor',subjects:'Circuit Theory, Power Systems',email:'rekha@edu.com',phone:'9876540040',exp:'9',status:'active'} ],
+  EC:[ {id:6001,name:'Dr. Vijay Patil',designation:'Professor',subjects:'Digital Electronics, Signal Processing',email:'vijay@edu.com',phone:'9876540050',exp:'13',status:'active'} ],
+};
+
+function BranchManagementPage() {
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [activeTab, setActiveTab]           = useState('students');
+  const [branchStudents, setBranchStudents] = useState(BRANCH_STUDENTS_INIT);
+  const [branchTeachers, setBranchTeachers] = useState(BRANCH_TEACHERS_INIT);
+  const [modal, setModal]                   = useState(null); // 'add-student'|'add-teacher'|'edit-student'|'edit-teacher'
+  const [deleteInfo, setDeleteInfo]         = useState(null); // {type,id}
+  const [search, setSearch]                 = useState('');
+  const [toast, setToast]                   = useState('');
+  const [studentForm, setStudentForm]       = useState({name:'',rollNo:'',semester:'1st',div:'A',email:'',phone:'',status:'active'});
+  const [teacherForm, setTeacherForm]       = useState({name:'',designation:'Assistant Professor',subjects:'',email:'',phone:'',exp:'',status:'active'});
+
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3000); };
+
+  // ── Branch List View ──
+  if (!selectedBranch) {
+    return (
+      <div>
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:16,fontWeight:600,marginBottom:4}}>Select a Branch to Manage</div>
+          <div style={{fontSize:13,color:'var(--text3)'}}>Branch click karo — students aur teachers manage karo</div>
+        </div>
+        {/* Stats row */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:24}}>
+          {[
+            {label:'Total Branches', value:BRANCHES.length, badge:'badge-blue'},
+            {label:'Total Students', value:BRANCHES.reduce((a,b)=>a+b.totalStudents,0).toLocaleString(), badge:'badge-green'},
+            {label:'Total Teachers', value:BRANCHES.reduce((a,b)=>a+b.totalTeachers,0), badge:'badge-purple'},
+            {label:'Departments', value:BRANCHES.length, badge:'badge-amber'},
+          ].map(s=>(
+            <div key={s.label} className="stat-card">
+              <div className="stat-label">{s.label}</div>
+              <div className="stat-value">{s.value}</div>
+              <div className="stat-sub"><span className={`stat-badge ${s.badge}`}>College total</span></div>
+            </div>
+          ))}
+        </div>
+        {/* Branch Cards Grid */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+          {BRANCHES.map(branch => (
+            <div key={branch.code}
+              onClick={() => { setSelectedBranch(branch); setSearch(''); setActiveTab('students'); }}
+              style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:14,
+                padding:'20px',cursor:'pointer',transition:'all 0.18s',position:'relative',overflow:'hidden'}}
+              onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)';}}
+              onMouseLeave={e=>{e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='';}}>
+              {/* Top color bar */}
+              <div style={{position:'absolute',top:0,left:0,right:0,height:4,background:branch.color,borderRadius:'14px 14px 0 0'}}/>
+              {/* Icon + Code */}
+              <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14,marginTop:6}}>
+                <div style={{width:48,height:48,borderRadius:12,background:branch.bg,
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>
+                  {branch.icon}
+                </div>
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,color:branch.color,textTransform:'uppercase',letterSpacing:'0.8px'}}>
+                    {branch.code}
+                  </div>
+                  <div style={{fontSize:15,fontWeight:700,color:'var(--text)',letterSpacing:'-0.3px'}}>{branch.name}</div>
+                </div>
+              </div>
+              {/* HOD */}
+              <div style={{fontSize:12,color:'var(--text3)',marginBottom:14}}>
+                👨‍💼 HOD: <span style={{color:'var(--text2)',fontWeight:500}}>{branch.hod}</span>
+              </div>
+              {/* Stats */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <div style={{padding:'8px 12px',background:'var(--bg)',borderRadius:8,textAlign:'center'}}>
+                  <div style={{fontSize:20,fontWeight:700,color:branch.color}}>{branchStudents[branch.code]?.length || 0}</div>
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>Students</div>
+                </div>
+                <div style={{padding:'8px 12px',background:'var(--bg)',borderRadius:8,textAlign:'center'}}>
+                  <div style={{fontSize:20,fontWeight:700,color:branch.color}}>{branchTeachers[branch.code]?.length || 0}</div>
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>Teachers</div>
+                </div>
+              </div>
+              {/* Manage button */}
+              <div style={{marginTop:14,padding:'8px',background:branch.bg,borderRadius:8,
+                textAlign:'center',fontSize:13,fontWeight:600,color:branch.color}}>
+                Manage {branch.code} →
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Branch Detail View ──
+  const branch = selectedBranch;
+  const students = (branchStudents[branch.code] || []).filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.rollNo.toLowerCase().includes(search.toLowerCase())
+  );
+  const teachers = (branchTeachers[branch.code] || []).filter(t =>
+    t.name.toLowerCase().includes(search.toLowerCase()) ||
+    t.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const openAddStudent = () => {
+    setStudentForm({name:'',rollNo:branch.code+'2025'+(Math.floor(Math.random()*900)+100),semester:'1st',div:'A',email:'',phone:'',status:'active'});
+    setModal('add-student');
+  };
+  const openEditStudent = (s) => { setStudentForm({...s}); setModal('edit-student'); };
+  const saveStudent = () => {
+    if(!studentForm.name || !studentForm.rollNo) return alert('Naam aur Roll No required!');
+    if(modal==='add-student') {
+      setBranchStudents(p=>({...p,[branch.code]:[...(p[branch.code]||[]),{...studentForm,id:Date.now()}]}));
+      showToast('✅ Student add ho gaya!');
+    } else {
+      setBranchStudents(p=>({...p,[branch.code]:p[branch.code].map(s=>s.id===studentForm.id?studentForm:s)}));
+      showToast('✅ Student updated!');
+    }
+    setModal(null);
+  };
+  const deleteStudent = (id) => {
+    setBranchStudents(p=>({...p,[branch.code]:p[branch.code].filter(s=>s.id!==id)}));
+    setDeleteInfo(null); showToast('🗑️ Student delete ho gaya!');
+  };
+
+  const openAddTeacher = () => {
+    setTeacherForm({name:'',designation:'Assistant Professor',subjects:'',email:'',phone:'',exp:'',status:'active'});
+    setModal('add-teacher');
+  };
+  const openEditTeacher = (t) => { setTeacherForm({...t}); setModal('edit-teacher'); };
+  const saveTeacher = () => {
+    if(!teacherForm.name || !teacherForm.email) return alert('Naam aur Email required!');
+    if(modal==='add-teacher') {
+      setBranchTeachers(p=>({...p,[branch.code]:[...(p[branch.code]||[]),{...teacherForm,id:Date.now()}]}));
+      showToast('✅ Teacher add ho gaya!');
+    } else {
+      setBranchTeachers(p=>({...p,[branch.code]:p[branch.code].map(t=>t.id===teacherForm.id?teacherForm:t)}));
+      showToast('✅ Teacher updated!');
+    }
+    setModal(null);
+  };
+  const deleteTeacher = (id) => {
+    setBranchTeachers(p=>({...p,[branch.code]:p[branch.code].filter(t=>t.id!==id)}));
+    setDeleteInfo(null); showToast('🗑️ Teacher delete ho gaya!');
+  };
+
+  return (
+    <div>
+      {/* Toast */}
+      {toast && (
+        <div style={{position:'fixed',top:20,right:20,zIndex:999,background:'var(--text)',color:'var(--surface)',
+          padding:'12px 20px',borderRadius:10,fontSize:14,fontWeight:500,boxShadow:'0 4px 16px rgba(0,0,0,0.18)'}}>
+          {toast}
+        </div>
+      )}
+
+      {/* Back + Header */}
+      <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:20}}>
+        <button onClick={()=>setSelectedBranch(null)}
+          style={{border:'1px solid var(--border)',background:'var(--surface)',borderRadius:8,
+            padding:'7px 14px',cursor:'pointer',fontSize:13,color:'var(--text2)',fontWeight:500}}>
+          ← Branches
+        </button>
+        <div style={{width:42,height:42,borderRadius:10,background:branch.bg,
+          display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>
+          {branch.icon}
+        </div>
+        <div>
+          <div style={{fontSize:18,fontWeight:700,color:'var(--text)'}}>{branch.name}</div>
+          <div style={{fontSize:12,color:'var(--text3)'}}>
+            HOD: {branch.hod} &nbsp;·&nbsp;
+            {branchStudents[branch.code]?.length||0} Students &nbsp;·&nbsp;
+            {branchTeachers[branch.code]?.length||0} Teachers
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs + Search + Add Button */}
+      <div style={{display:'flex',gap:12,marginBottom:20,alignItems:'center',flexWrap:'wrap'}}>
+        {/* Tabs */}
+        <div style={{display:'flex',gap:3,background:'var(--surface2)',borderRadius:10,padding:3}}>
+          {[['students','👨‍🎓 Students'],['teachers','👨‍🏫 Teachers']].map(([tab,label])=>(
+            <button key={tab} onClick={()=>{setActiveTab(tab);setSearch('');}}
+              style={{padding:'7px 16px',borderRadius:8,border:'none',cursor:'pointer',fontSize:13,fontWeight:500,
+                background:activeTab===tab?'var(--surface)':'transparent',
+                color:activeTab===tab?'var(--text)':'var(--text3)',
+                boxShadow:activeTab===tab?'0 1px 3px rgba(0,0,0,0.08)':'none',transition:'all 0.15s'}}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {/* Search */}
+        <div style={{flex:1,minWidth:200,position:'relative'}}>
+          <div style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',opacity:0.4}}>
+            <Icon name="search" size={14}/>
+          </div>
+          <input className="form-input" style={{paddingLeft:34,fontSize:13}}
+            placeholder={activeTab==='students'?'Student naam ya roll no…':'Teacher naam ya email…'}
+            value={search} onChange={e=>setSearch(e.target.value)}/>
+        </div>
+        {/* Add Button */}
+        <button className="btn btn-primary"
+          style={{background:branch.color}}
+          onClick={activeTab==='students' ? openAddStudent : openAddTeacher}>
+          <Icon name="plus" size={15} color="white"/>
+          {activeTab==='students' ? `Add ${branch.code} Student` : `Add ${branch.code} Teacher`}
+        </button>
+      </div>
+
+      {/* ── STUDENTS TABLE ── */}
+      {activeTab === 'students' && (
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">{branch.name} — Students</div>
+              <div className="card-subtitle">{students.length} students found</div>
+            </div>
+            <span className="chip" style={{background:branch.bg,color:branch.color}}>
+              {branchStudents[branch.code]?.length||0} Total
+            </span>
+          </div>
+          {students.length === 0 ? (
+            <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
+              <div style={{fontSize:32,marginBottom:10}}>👨‍🎓</div>
+              <div style={{fontSize:14,fontWeight:500}}>Koi student nahi mila</div>
+              <div style={{fontSize:13,marginTop:4}}>Upar "Add Student" button click karo</div>
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Roll No</th><th>Name</th><th>Semester</th><th>Div</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  {students.map(s=>(
+                    <tr key={s.id}>
+                      <td style={{fontFamily:'DM Mono',fontSize:13,fontWeight:600}}>{s.rollNo}</td>
+                      <td>
+                        <div style={{display:'flex',alignItems:'center',gap:9}}>
+                          <div style={{width:30,height:30,borderRadius:'50%',background:branch.bg,
+                            color:branch.color,display:'flex',alignItems:'center',justifyContent:'center',
+                            fontSize:12,fontWeight:700,flexShrink:0}}>
+                            {s.name.split(' ').map(n=>n[0]).join('').slice(0,2)}
+                          </div>
+                          <span style={{fontWeight:500}}>{s.name}</span>
+                        </div>
+                      </td>
+                      <td>{s.semester}</td>
+                      <td><span className="chip badge-blue">Div {s.div}</span></td>
+                      <td style={{color:'var(--text3)',fontSize:13}}>{s.email}</td>
+                      <td style={{fontSize:13}}>{s.phone}</td>
+                      <td><span className={`chip ${s.status==='active'?'badge-green':'badge-red'}`}>{s.status}</span></td>
+                      <td>
+                        <div style={{display:'flex',gap:6}}>
+                          <button className="btn btn-secondary btn-sm" onClick={()=>openEditStudent(s)}>
+                            <Icon name="edit" size={13}/>
+                          </button>
+                          <button className="btn btn-danger btn-sm" onClick={()=>setDeleteInfo({type:'student',id:s.id})}>
+                            <Icon name="trash" size={13} color="var(--red)"/>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TEACHERS TABLE ── */}
+      {activeTab === 'teachers' && (
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">{branch.name} — Teachers</div>
+              <div className="card-subtitle">{teachers.length} teachers found</div>
+            </div>
+            <span className="chip" style={{background:branch.bg,color:branch.color}}>
+              {branchTeachers[branch.code]?.length||0} Total
+            </span>
+          </div>
+          {teachers.length === 0 ? (
+            <div style={{textAlign:'center',padding:'40px 0',color:'var(--text3)'}}>
+              <div style={{fontSize:32,marginBottom:10}}>👨‍🏫</div>
+              <div style={{fontSize:14,fontWeight:500}}>Koi teacher nahi mila</div>
+              <div style={{fontSize:13,marginTop:4}}>Upar "Add Teacher" button click karo</div>
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Name</th><th>Designation</th><th>Subjects</th><th>Experience</th><th>Email</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  {teachers.map(t=>(
+                    <tr key={t.id}>
+                      <td>
+                        <div style={{display:'flex',alignItems:'center',gap:9}}>
+                          <div style={{width:32,height:32,borderRadius:'50%',background:branch.bg,
+                            color:branch.color,display:'flex',alignItems:'center',justifyContent:'center',
+                            fontSize:12,fontWeight:700,flexShrink:0}}>
+                            {t.name.split(' ').map(n=>n[0]).join('').slice(0,2)}
+                          </div>
+                          <span style={{fontWeight:500}}>{t.name}</span>
+                        </div>
+                      </td>
+                      <td style={{fontSize:13,color:'var(--text2)'}}>{t.designation}</td>
+                      <td style={{fontSize:12,color:'var(--text3)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.subjects}</td>
+                      <td style={{fontWeight:500}}>{t.exp} yrs</td>
+                      <td style={{color:'var(--text3)',fontSize:13}}>{t.email}</td>
+                      <td><span className={`chip ${t.status==='active'?'badge-green':'badge-red'}`}>{t.status}</span></td>
+                      <td>
+                        <div style={{display:'flex',gap:6}}>
+                          <button className="btn btn-secondary btn-sm" onClick={()=>openEditTeacher(t)}>
+                            <Icon name="edit" size={13}/>
+                          </button>
+                          <button className="btn btn-danger btn-sm" onClick={()=>setDeleteInfo({type:'teacher',id:t.id})}>
+                            <Icon name="trash" size={13} color="var(--red)"/>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── ADD / EDIT STUDENT MODAL ── */}
+      {(modal==='add-student'||modal==='edit-student') && (
+        <div className="modal-overlay" onClick={()=>setModal(null)}>
+          <div className="modal" style={{width:520}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <div style={{width:32,height:32,borderRadius:8,background:branch.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>{branch.icon}</div>
+                <div className="modal-title" style={{margin:0}}>
+                  {modal==='add-student'?`➕ ${branch.code} — Naya Student Add Karo`:`✏️ Student Details Edit Karo`}
+                </div>
+              </div>
+              <button onClick={()=>setModal(null)} style={{border:'none',background:'none',cursor:'pointer',color:'var(--text3)'}}><Icon name="close" size={18}/></button>
+            </div>
+            <div className="grid-2" style={{gap:14}}>
+              {[['name','Full Name *','text','Jaise: Rohit Sharma'],['rollNo','Roll Number *','text',`Jaise: ${branch.code}2025001`],['email','Email','email','student@edu.com'],['phone','Phone','text','9876543210']].map(([field,label,type,ph])=>(
+                <div key={field} style={{marginBottom:0}}>
+                  <label className="form-label">{label}</label>
+                  <input className="form-input" type={type} placeholder={ph}
+                    value={studentForm[field]||''} onChange={e=>setStudentForm(p=>({...p,[field]:e.target.value}))}/>
+                </div>
+              ))}
+              <div>
+                <label className="form-label">Semester</label>
+                <select className="form-input" value={studentForm.semester} onChange={e=>setStudentForm(p=>({...p,semester:e.target.value}))}>
+                  {['1st','2nd','3rd','4th','5th','6th','7th','8th'].map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Division</label>
+                <select className="form-input" value={studentForm.div} onChange={e=>setStudentForm(p=>({...p,div:e.target.value}))}>
+                  {['A','B','C'].map(d=><option key={d}>{d}</option>)}
+                </select>
+              </div>
+              <div style={{gridColumn:'1/-1'}}>
+                <label className="form-label">Status</label>
+                <select className="form-input" style={{maxWidth:200}} value={studentForm.status} onChange={e=>setStudentForm(p=>({...p,status:e.target.value}))}>
+                  <option value="active">Active</option><option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setModal(null)}>Cancel</button>
+              <button className="btn btn-primary" style={{background:branch.color}} onClick={saveStudent}>
+                {modal==='add-student'?'➕ Add Student':'💾 Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD / EDIT TEACHER MODAL ── */}
+      {(modal==='add-teacher'||modal==='edit-teacher') && (
+        <div className="modal-overlay" onClick={()=>setModal(null)}>
+          <div className="modal" style={{width:520}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <div style={{width:32,height:32,borderRadius:8,background:branch.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>{branch.icon}</div>
+                <div className="modal-title" style={{margin:0}}>
+                  {modal==='add-teacher'?`➕ ${branch.code} — Naya Teacher Add Karo`:`✏️ Teacher Details Edit Karo`}
+                </div>
+              </div>
+              <button onClick={()=>setModal(null)} style={{border:'none',background:'none',cursor:'pointer',color:'var(--text3)'}}><Icon name="close" size={18}/></button>
+            </div>
+            <div className="grid-2" style={{gap:14}}>
+              {[['name','Full Name *','text','Jaise: Dr. Rohit Sharma'],['email','Email *','email','teacher@edu.com'],['phone','Phone','text','9876543210'],['exp','Experience (Years)','number','Jaise: 5']].map(([field,label,type,ph])=>(
+                <div key={field} style={{marginBottom:0}}>
+                  <label className="form-label">{label}</label>
+                  <input className="form-input" type={type} placeholder={ph}
+                    value={teacherForm[field]||''} onChange={e=>setTeacherForm(p=>({...p,[field]:e.target.value}))}/>
+                </div>
+              ))}
+              <div>
+                <label className="form-label">Designation</label>
+                <select className="form-input" value={teacherForm.designation} onChange={e=>setTeacherForm(p=>({...p,designation:e.target.value}))}>
+                  {['Assistant Professor','Associate Professor','Professor','HOD','Dean','Lecturer'].map(d=><option key={d}>{d}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Status</label>
+                <select className="form-input" value={teacherForm.status} onChange={e=>setTeacherForm(p=>({...p,status:e.target.value}))}>
+                  <option value="active">Active</option><option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <div style={{gridColumn:'1/-1'}}>
+                <label className="form-label">Subjects (comma se alag karo)</label>
+                <input className="form-input" placeholder="Jaise: Data Structures, Algorithms, DBMS"
+                  value={teacherForm.subjects||''} onChange={e=>setTeacherForm(p=>({...p,subjects:e.target.value}))}/>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setModal(null)}>Cancel</button>
+              <button className="btn btn-primary" style={{background:branch.color}} onClick={saveTeacher}>
+                {modal==='add-teacher'?'➕ Add Teacher':'💾 Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE CONFIRM ── */}
+      {deleteInfo && (
+        <div className="modal-overlay" onClick={()=>setDeleteInfo(null)}>
+          <div className="modal" style={{width:380}} onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">🗑️ Delete Karo?</div>
+            <p style={{color:'var(--text2)',fontSize:14,lineHeight:1.6}}>
+              Kya aap sure ho? Yeh action undo nahi ho sakta. Record permanently delete ho jayega.
+            </p>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setDeleteInfo(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={()=>deleteInfo.type==='student'?deleteStudent(deleteInfo.id):deleteTeacher(deleteInfo.id)}>
+                Haan, Delete Karo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── App Shell ────────────────────────────────────────────────────────────────
 const PAGE_TITLES = {
   dashboard:'Dashboard',attendance:'My Attendance',marks:'My Marks',timetable:'Timetable',
   notifications:'Notifications','class-attendance':'Class Attendance','marks-entry':'Marks Entry',
-  students:'Student Management',teachers:'Faculty Management',reports:'Reports & Analytics',settings:'System Settings',
+  students:'All Students',teachers:'All Teachers',reports:'Reports & Analytics',settings:'System Settings',
+  branches:'Branch Management',
 };
 
-// Simple API base URL (no complex detection needed)
-const API_BASE_URL = 'http://localhost:5000';
-
 function App() {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState('dashboard');
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setActiveView('dashboard');
-  };
 
   const renderContent = () => {
     if (!user) return null;
@@ -1392,7 +2372,7 @@ function App() {
       return views[activeView] || <TeacherDashboard user={user}/>;
     }
     if (user.role === 'admin') {
-      const views = { dashboard:<AdminDashboard/>, students:<StudentsPage/>, teachers:<TeachersPage/>, reports:<ReportsPage/>, settings:<SettingsPage user={user}/> };
+      const views = { dashboard:<AdminDashboard/>, branches:<BranchManagementPage/>, students:<StudentsPage/>, teachers:<TeachersPage/>, reports:<ReportsPage/>, settings:<SettingsPage user={user}/> };
       return views[activeView] || <AdminDashboard/>;
     }
   };
@@ -1401,7 +2381,7 @@ function App() {
 
   return (
     <div className="app-layout">
-      <Sidebar user={user} activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout}/>
+      <Sidebar user={user} activeView={activeView} setActiveView={setActiveView} onLogout={()=>{setUser(null);setActiveView('dashboard');}}/>
       <div className="main-content">
         <div className="topbar">
           <div className="page-title">{PAGE_TITLES[activeView]||'Dashboard'}</div>
