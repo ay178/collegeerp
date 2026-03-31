@@ -79,6 +79,31 @@ const restrictTo = (...roles) => (req, res, next) => {
   next();
 };
 
+// ── SEED ROUTE — Demo users banane ke liye ──
+app.get('/api/seed', async (req, res) => {
+  try {
+    const users = [
+      { name: 'Dr. Ramesh Kumar',   email: 'admin@edu.com',   password: 'admin123',  role: 'admin'   },
+      { name: 'Prof. Anjali Singh', email: 'teacher@edu.com', password: 'teach123',  role: 'teacher' },
+      { name: 'Arjun Mehta',        email: 'student@edu.com', password: 'stud123',   role: 'student' },
+    ];
+    const results = [];
+    for (const u of users) {
+      const existing = await User.findOne({ email: u.email });
+      if (!existing) {
+        const created = await User.create(u);
+        results.push('Created: ' + created.email);
+      } else {
+        results.push('Already exists: ' + u.email);
+      }
+    }
+    res.json({ message: 'Seed done!', results });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── Auth Routes ──
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -114,6 +139,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// ── Student Routes ──
 app.get('/api/students', protect, async (req, res) => {
   try {
     const { branch, semester, division, search } = req.query;
@@ -159,6 +185,7 @@ app.delete('/api/students/:id', protect, restrictTo('admin'), async (req, res) =
   }
 });
 
+// ── Attendance Routes ──
 app.post('/api/attendance/mark', protect, restrictTo('teacher', 'admin'), async (req, res) => {
   try {
     const { records, subject, date, branch, division } = req.body;
@@ -185,6 +212,7 @@ app.get('/api/attendance/student/:id', protect, async (req, res) => {
   }
 });
 
+// ── Marks Routes ──
 app.post('/api/marks', protect, restrictTo('teacher', 'admin'), async (req, res) => {
   try {
     const { entries } = req.body;
@@ -215,6 +243,7 @@ app.get('/api/marks/student/:id', protect, async (req, res) => {
   }
 });
 
+// ── Admin Routes ──
 app.get('/api/admin/stats', protect, restrictTo('admin'), async (req, res) => {
   try {
     const [students, activeStudents] = await Promise.all([
@@ -227,6 +256,7 @@ app.get('/api/admin/stats', protect, restrictTo('admin'), async (req, res) => {
   }
 });
 
+// ── Connect MongoDB ──
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/college_erp';
 console.log('Connecting to MongoDB...');
 
