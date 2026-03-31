@@ -13,13 +13,13 @@ app.use(express.json());
 
 app.get('/', (req, res) => res.json({ status: 'EduERP API running' }));
 
-// ── Schemas ──
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['student', 'teacher', 'admin'], required: true },
 }, { timestamps: true });
+
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
@@ -30,23 +30,29 @@ const User = mongoose.model('User', userSchema);
 const studentSchema = new mongoose.Schema({
   rollNo: { type: String, required: true, unique: true },
   name: { type: String, required: true },
-  email: String, phone: String, branch: String,
-  semester: String, division: String,
+  email: String,
+  phone: String,
+  branch: String,
+  semester: String,
+  division: String,
   status: { type: String, default: 'active' },
 }, { timestamps: true });
 const Student = mongoose.model('Student', studentSchema);
 
 const attendanceSchema = new mongoose.Schema({
   studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
-  subject: String, date: Date,
+  subject: String,
+  date: Date,
   status: { type: String, enum: ['present', 'absent'], default: 'absent' },
-  branch: String, division: String,
+  branch: String,
+  division: String,
 }, { timestamps: true });
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
 const marksSchema = new mongoose.Schema({
   studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
-  subject: String, semester: String,
+  subject: String,
+  semester: String,
   midterm1: { type: Number, default: 0 },
   midterm2: { type: Number, default: 0 },
   assignment: { type: Number, default: 0 },
@@ -55,7 +61,6 @@ const marksSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Marks = mongoose.model('Marks', marksSchema);
 
-// ── Middleware ──
 const protect = (req, res, next) => {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer '))
@@ -63,7 +68,7 @@ const protect = (req, res, next) => {
   try {
     req.user = jwt.verify(auth.split(' ')[1], JWT_SECRET);
     next();
-  } catch {
+  } catch (e) {
     res.status(401).json({ message: 'Invalid token' });
   }
 };
@@ -74,7 +79,6 @@ const restrictTo = (...roles) => (req, res, next) => {
   next();
 };
 
-// ── Routes ──
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -84,7 +88,8 @@ app.post('/api/auth/login', async (req, res) => {
     if (!match) return res.status(401).json({ message: 'Invalid credentials' });
     const token = jwt.sign(
       { id: user._id, role: user.role, name: user.name },
-      JWT_SECRET, { expiresIn: '7d' }
+      JWT_SECRET,
+      { expiresIn: '7d' }
     );
     res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
@@ -100,7 +105,8 @@ app.post('/api/auth/register', async (req, res) => {
     const user = await User.create({ name, email, password, role });
     const token = jwt.sign(
       { id: user._id, role: user.role, name: user.name },
-      JWT_SECRET, { expiresIn: '7d' }
+      JWT_SECRET,
+      { expiresIn: '7d' }
     );
     res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
@@ -137,9 +143,7 @@ app.post('/api/students', protect, restrictTo('admin'), async (req, res) => {
 
 app.put('/api/students/:id', protect, restrictTo('admin'), async (req, res) => {
   try {
-    const student = await Student.findByIdAndUpdate(
-      req.params.id, req.body, { new: true }
-    );
+    const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(student);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -185,8 +189,8 @@ app.post('/api/marks', protect, restrictTo('teacher', 'admin'), async (req, res)
   try {
     const { entries } = req.body;
     const ops = entries.map(e => {
-      const total = (e.midterm1||0) + (e.midterm2||0) + (e.assignment||0);
-      const grade = total>=80?'A+':total>=70?'A':total>=60?'B+':total>=50?'B':'C';
+      const total = (e.midterm1 || 0) + (e.midterm2 || 0) + (e.assignment || 0);
+      const grade = total >= 80 ? 'A+' : total >= 70 ? 'A' : total >= 60 ? 'B+' : total >= 50 ? 'B' : 'C';
       return {
         updateOne: {
           filter: { studentId: e.studentId, subject: e.subject, semester: e.semester },
@@ -223,19 +227,17 @@ app.get('/api/admin/stats', protect, restrictTo('admin'), async (req, res) => {
   }
 });
 
-// ── MongoDB Connect ──
-const MONGO_URI = process.env.MONGO_URI;
-
-console.log("🔍 Connecting to MongoDB...");
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/college_erp';
+console.log('Connecting to MongoDB...');
 
 mongoose.connect(MONGO_URI)
   .then(() => {
-    console.log('✅ MongoDB connected successfully!');
+    console.log('MongoDB connected successfully!');
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    app.listen(PORT, () => console.log('Server running on port ' + PORT));
   })
   .catch(err => {
-    console.error('❌ MongoDB connection failed:', err.message);
+    console.error('MongoDB connection failed: ' + err.message);
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT} (no DB)`));
+    app.listen(PORT, () => console.log('Server running on port ' + PORT + ' (no DB)'));
   });
