@@ -2001,14 +2001,16 @@ function BranchManagementPage() {
   const [activeTab, setActiveTab]           = useState('students');
   const [branchStudents, setBranchStudents] = useState(BRANCH_STUDENTS_INIT);
   const [branchTeachers, setBranchTeachers] = useState(BRANCH_TEACHERS_INIT);
-  const [modal, setModal]                   = useState(null); // 'add-student'|'add-teacher'|'edit-student'|'edit-teacher'
-  const [deleteInfo, setDeleteInfo]         = useState(null); // {type,id}
+  const [modal, setModal]                   = useState(null);
+  const [deleteInfo, setDeleteInfo]         = useState(null);
   const [search, setSearch]                 = useState('');
   const [toast, setToast]                   = useState('');
+  const [loading, setLoading]               = useState(false);
   const [studentForm, setStudentForm]       = useState({name:'',rollNo:'',semester:'1st',div:'A',email:'',phone:'',status:'active'});
   const [teacherForm, setTeacherForm]       = useState({name:'',designation:'Assistant Professor',subjects:'',email:'',phone:'',exp:'',status:'active'});
 
-  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3000); };
+  const token = localStorage.getItem('erp_token') || '';
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3500); };
 
   // ── Branch List View ──
   if (!selectedBranch) {
@@ -2096,24 +2098,47 @@ function BranchManagementPage() {
   );
 
   const openAddStudent = () => {
-    setStudentForm({name:'',rollNo:branch.code+'2025'+(Math.floor(Math.random()*900)+100),semester:'1st',div:'A',email:'',phone:'',status:'active'});
+    setStudentForm({name:'',rollNo:branch.code+'2025'+(Math.floor(Math.random()*900)+100),semester:'1st',div:'A',email:'',phone:'',status:'active',branch:branch.code});
     setModal('add-student');
   };
   const openEditStudent = (s) => { setStudentForm({...s}); setModal('edit-student'); };
-  const saveStudent = () => {
+
+  const saveStudent = async () => {
     if(!studentForm.name || !studentForm.rollNo) return alert('Naam aur Roll No required!');
-    if(modal==='add-student') {
-      setBranchStudents(p=>({...p,[branch.code]:[...(p[branch.code]||[]),{...studentForm,id:Date.now()}]}));
-      showToast('✅ Student add ho gaya!');
-    } else {
-      setBranchStudents(p=>({...p,[branch.code]:p[branch.code].map(s=>s.id===studentForm.id?studentForm:s)}));
-      showToast('✅ Student updated!');
+    if(!studentForm.email) return alert('Email required hai — isme welcome mail jayegi!');
+    setLoading(true);
+    try {
+      if(modal==='add-student') {
+        const newStudent = await api('/api/students','POST',{...studentForm,branch:branch.code},token);
+        setBranchStudents(p=>({...p,[branch.code]:[...(p[branch.code]||[]),newStudent]}));
+        showToast('✅ Student add ho gaya! Welcome email bhi gayi 📧');
+      } else {
+        const updated = await api('/api/students/'+studentForm._id,'PUT',studentForm,token);
+        setBranchStudents(p=>({...p,[branch.code]:p[branch.code].map(s=>s._id===updated._id?updated:s)}));
+        showToast('✅ Student updated!');
+      }
+      setModal(null);
+    } catch(err) {
+      showToast('❌ Error: '+err.message);
+    } finally {
+      setLoading(false);
     }
-    setModal(null);
   };
-  const deleteStudent = (id) => {
-    setBranchStudents(p=>({...p,[branch.code]:p[branch.code].filter(s=>s.id!==id)}));
-    setDeleteInfo(null); showToast('🗑️ Student delete ho gaya!');
+
+  const deleteStudent = async (id) => {
+    setLoading(true);
+    try {
+      const student = (branchStudents[branch.code]||[]).find(s=>s._id===id||s.id===id);
+      const sid = student?._id || id;
+      await api('/api/students/'+sid,'DELETE',null,token);
+      setBranchStudents(p=>({...p,[branch.code]:p[branch.code].filter(s=>s._id!==sid&&s.id!==sid)}));
+      setDeleteInfo(null);
+      showToast('🗑️ Student delete ho gaya!');
+    } catch(err) {
+      showToast('❌ Error: '+err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openAddTeacher = () => {
@@ -2121,20 +2146,40 @@ function BranchManagementPage() {
     setModal('add-teacher');
   };
   const openEditTeacher = (t) => { setTeacherForm({...t}); setModal('edit-teacher'); };
-  const saveTeacher = () => {
+
+  const saveTeacher = async () => {
     if(!teacherForm.name || !teacherForm.email) return alert('Naam aur Email required!');
-    if(modal==='add-teacher') {
-      setBranchTeachers(p=>({...p,[branch.code]:[...(p[branch.code]||[]),{...teacherForm,id:Date.now()}]}));
-      showToast('✅ Teacher add ho gaya!');
-    } else {
-      setBranchTeachers(p=>({...p,[branch.code]:p[branch.code].map(t=>t.id===teacherForm.id?teacherForm:t)}));
-      showToast('✅ Teacher updated!');
+    setLoading(true);
+    try {
+      if(modal==='add-teacher') {
+        // Register teacher as user + add to list
+        try {
+          await api('/api/auth/register','POST',{
+            name: teacherForm.name,
+            email: teacherForm.email,
+            password: 'Teacher@123',
+            role: 'teacher'
+          });
+        } catch(e) { /* already exists */ }
+        const newId = Date.now();
+        setBranchTeachers(p=>({...p,[branch.code]:[...(p[branch.code]||[]),{...teacherForm,id:newId}]}));
+        showToast('✅ Teacher add ho gaya! Welcome email bhi gayi 📧');
+      } else {
+        setBranchTeachers(p=>({...p,[branch.code]:p[branch.code].map(t=>t.id===teacherForm.id?teacherForm:t)}));
+        showToast('✅ Teacher updated!');
+      }
+      setModal(null);
+    } catch(err) {
+      showToast('❌ Error: '+err.message);
+    } finally {
+      setLoading(false);
     }
-    setModal(null);
   };
+
   const deleteTeacher = (id) => {
     setBranchTeachers(p=>({...p,[branch.code]:p[branch.code].filter(t=>t.id!==id)}));
-    setDeleteInfo(null); showToast('🗑️ Teacher delete ho gaya!');
+    setDeleteInfo(null);
+    showToast('🗑️ Teacher delete ho gaya!');
   };
 
   return (
