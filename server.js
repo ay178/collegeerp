@@ -252,7 +252,12 @@ app.post('/api/students', protect, restrictTo('admin'), async (req, res) => {
             <tr><td style="padding:10px;color:#666;">Division</td><td style="padding:10px;">${student.division}</td></tr>
           </table>
           <a href="https://college-erp-frontend-rho.vercel.app" style="background:#2563eb;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px;">Login to EduERP</a>
-          <p style="color:#999;font-size:12px;margin-top:16px;">Use your registered email to login.</p>
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px;margin-top:12px;">
+            <p style="margin:0;font-size:13px;color:#92400e;font-weight:bold;">Login Details:</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#78350f;">Email: ${student.email}</p>
+            <p style="margin:4px 0 0;font-size:13px;color:#78350f;">Password: ${student.rollNo} (Aapka Roll Number)</p>
+            <p style="margin:8px 0 0;font-size:12px;color:#999;">Login ke baad password change karna mat bhoolo!</p>
+          </div>
         </div>
       `);
     }
