@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
+```
+
+**Step 2** — Save karo naam: `vercel.json`
+
+**Step 3** — Yahan rakhो:
+```
+C:\Users\amitv\OneDrive\Pictures\Documents\Desktop\New folder\
