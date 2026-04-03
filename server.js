@@ -529,6 +529,61 @@ app.get('/api/admin/stats', protect, restrictTo('admin'), async (req, res) => {
   }
 });
 
+// ── Fee Receipt Email Route ──
+app.post('/api/fees/receipt', async (req, res) => {
+  try {
+    const { studentName, email, rollNo, amount, receipt, mode, semester, date, totalFee, totalPaid, totalDue } = req.body;
+
+    await sendEmail(email, 'Fee Payment Receipt — EduERP 🎓', `
+      <div style="font-family:sans-serif;max-width:550px;margin:auto;padding:20px;background:#f9f9f9;">
+        <div style="background:white;border-radius:12px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:48px;">🎉</div>
+            <h2 style="color:#16a34a;margin:8px 0;">Payment Successful!</h2>
+            <p style="color:#666;font-size:14px;margin:0;">Aapki fee payment confirm ho gayi hai</p>
+          </div>
+
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px;margin-bottom:20px;text-align:center;">
+            <p style="margin:0;font-size:14px;color:#15803d;">Amount Paid</p>
+            <p style="margin:8px 0 0;font-size:36px;font-weight:800;color:#16a34a;">₹${amount.toLocaleString()}</p>
+          </div>
+
+          <div style="background:#f8f9fa;border-radius:10px;padding:20px;margin-bottom:20px;">
+            <h3 style="margin:0 0 16px;font-size:15px;color:#333;">📋 Receipt Details</h3>
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;border-bottom:1px dashed #e5e7eb;">Receipt No</td><td style="padding:8px 0;font-weight:bold;font-size:13px;text-align:right;border-bottom:1px dashed #e5e7eb;">${receipt}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;border-bottom:1px dashed #e5e7eb;">Student Name</td><td style="padding:8px 0;font-weight:bold;font-size:13px;text-align:right;border-bottom:1px dashed #e5e7eb;">${studentName}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;border-bottom:1px dashed #e5e7eb;">Roll Number</td><td style="padding:8px 0;font-weight:bold;font-size:13px;text-align:right;border-bottom:1px dashed #e5e7eb;">${rollNo}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;border-bottom:1px dashed #e5e7eb;">Semester</td><td style="padding:8px 0;font-weight:bold;font-size:13px;text-align:right;border-bottom:1px dashed #e5e7eb;">${semester}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;border-bottom:1px dashed #e5e7eb;">Payment Date</td><td style="padding:8px 0;font-weight:bold;font-size:13px;text-align:right;border-bottom:1px dashed #e5e7eb;">${date}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;border-bottom:1px dashed #e5e7eb;">Payment Mode</td><td style="padding:8px 0;font-weight:bold;font-size:13px;text-align:right;border-bottom:1px dashed #e5e7eb;">${mode}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;border-bottom:1px dashed #e5e7eb;">Amount Paid</td><td style="padding:8px 0;font-weight:bold;font-size:13px;color:#16a34a;text-align:right;border-bottom:1px dashed #e5e7eb;">₹${totalPaid.toLocaleString()}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;">Balance Due</td><td style="padding:8px 0;font-weight:bold;font-size:13px;color:${totalDue>0?'#dc2626':'#16a34a'};text-align:right;">${totalDue>0?'₹'+totalDue.toLocaleString():'Nil ✅'}</td></tr>
+            </table>
+          </div>
+
+          ${totalDue <= 0 ? '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;text-align:center;margin-bottom:20px;"><p style="margin:0;color:#16a34a;font-weight:bold;font-size:15px;">🎓 Aapki poori fee jama ho gayi hai! Badhaai ho!</p></div>' : ''}
+
+          <div style="background:#eff6ff;border-radius:8px;padding:14px;margin-bottom:20px;">
+            <p style="margin:0;font-size:12px;color:#1e40af;">🔒 Yeh payment EduERP secure payment system ke through process hui hai. Koi problem ho toh college office se contact karo.</p>
+          </div>
+
+          <div style="text-align:center;">
+            <a href="https://college-erp-frontend-rho.vercel.app" style="background:#2563eb;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">EduERP Portal Kholo</a>
+          </div>
+
+          <p style="text-align:center;color:#999;font-size:11px;margin-top:20px;">EduERP College Management System · Auto-generated receipt</p>
+        </div>
+      </div>
+    `);
+
+    res.json({ success: true, message: 'Receipt email sent!' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── Email Test Route ──
 app.get('/api/test-email', async (req, res) => {
   const result = await sendEmail(
