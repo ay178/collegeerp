@@ -255,6 +255,17 @@ const { useState, useEffect, useCallback } = React;
 // ─── Backend API URL ─────────────────────────────────────────────────────────
 const API_URL = 'https://college-erp-hf1g.onrender.com';
 
+// Backend wake-up — Render free plan ke liye
+const wakeUpBackend = async () => {
+  try {
+    await fetch(API_URL + '/');
+    console.log('Backend is awake!');
+  } catch(e) {
+    console.log('Waking up backend...');
+  }
+};
+wakeUpBackend(); // Page load hote hi backend jaagta hai
+
 // ─── API Helper ───────────────────────────────────────────────────────────────
 const api = async (endpoint, method = 'GET', body = null, token = null) => {
   const headers = { 'Content-Type': 'application/json' };
@@ -344,6 +355,8 @@ const Icon = ({ name, size = 16, color = 'currentColor' }) => {
     award: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>,
     bar: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
     close: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    chat: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+    send: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
     check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>,
   };
   return icons[name] || null;
@@ -358,8 +371,16 @@ function LoginScreen({ onLogin }) {
 
   const [loading, setLoading] = useState(false);
 
+  const [serverStatus, setServerStatus] = useState('checking');
+
+  useEffect(() => {
+    fetch(API_URL + '/')
+      .then(() => setServerStatus('ready'))
+      .catch(() => setServerStatus('slow'));
+  }, []);
+
   const handleLogin = async () => {
-    if (!email || !password) { setError('Email aur password dono bharо!'); return; }
+    if (!email || !password) { setError('Email aur password dono bharo!'); return; }
     setLoading(true);
     setError('');
     try {
@@ -410,7 +431,24 @@ function LoginScreen({ onLogin }) {
           <input className="form-input" type="password" placeholder="Enter your password" value={password} onChange={e=>{setPassword(e.target.value);setError('');}} onKeyDown={e=>e.key==='Enter'&&handleLogin()} />
         </div>
         {error && <div style={{color:'var(--red)',fontSize:13,marginBottom:8}}>{error}</div>}
-        <button className="login-btn" onClick={handleLogin} disabled={loading}>{loading ? "Logging in..." : "Sign In →"}</button>
+        {serverStatus === 'checking' && (
+          <div style={{fontSize:12,color:'var(--amber)',marginBottom:8,textAlign:'center',padding:'6px 10px',background:'var(--amber-bg)',borderRadius:7}}>
+            ⏳ Server start ho raha hai — thoda wait karo...
+          </div>
+        )}
+        {serverStatus === 'slow' && (
+          <div style={{fontSize:12,color:'var(--amber)',marginBottom:8,textAlign:'center',padding:'6px 10px',background:'var(--amber-bg)',borderRadius:7}}>
+            ⚡ Server wake up ho raha hai — pehli baar thoda slow hoga
+          </div>
+        )}
+        {serverStatus === 'ready' && (
+          <div style={{fontSize:12,color:'var(--green)',marginBottom:8,textAlign:'center',padding:'6px 10px',background:'var(--green-bg)',borderRadius:7}}>
+            ✅ Server ready hai — login karo!
+          </div>
+        )}
+        <button className="login-btn" onClick={handleLogin} disabled={loading}>
+          {loading ? "⏳ Logging in... please wait..." : "Sign In →"}
+        </button>
 
         <div className="demo-creds">
           <div className="demo-title">Demo Accounts</div>
@@ -1048,8 +1086,8 @@ function TeacherDashboard({ user }) {
         </div>
         <div className="card">
           <div className="card-header"><div className="card-title">My Subjects</div></div>
-          {user.subjects.map((s,i)=>(
-            <div key={s} style={{display:'flex',alignItems:'center',gap:14,padding:'10px 0',borderBottom:i<user.subjects.length-1?'1px solid var(--border)':'none'}}>
+          {(user.subjects||['Data Structures','Algorithms','DBMS']).map((s,i)=>(
+            <div key={s} style={{display:'flex',alignItems:'center',gap:14,padding:'10px 0',borderBottom:i<(user.subjects||[]).length-1?'1px solid var(--border)':'none'}}>
               <div style={{width:40,height:40,borderRadius:9,background:['var(--accent-bg)','var(--purple-bg)','var(--green-bg)'][i],display:'flex',alignItems:'center',justifyContent:'center',color:['var(--accent)','var(--purple)','var(--green)'][i],fontWeight:700,fontSize:13}}>
                 {s.slice(0,2).toUpperCase()}
               </div>
@@ -2001,6 +2039,37 @@ function BranchManagementPage() {
   const [activeTab, setActiveTab]           = useState('students');
   const [branchStudents, setBranchStudents] = useState(BRANCH_STUDENTS_INIT);
   const [branchTeachers, setBranchTeachers] = useState(BRANCH_TEACHERS_INIT);
+  const [dataLoading, setDataLoading]       = useState(true);
+
+  // MongoDB se saare students load karo — page khulte hi
+  useEffect(() => {
+    const loadAllStudents = async () => {
+      setDataLoading(true);
+      try {
+        const allStudents = await api('/api/students', 'GET', null, token);
+        // Branch wise group karo
+        const grouped = {};
+        allStudents.forEach(s => {
+          const br = s.branch || 'CS';
+          if (!grouped[br]) grouped[br] = [];
+          grouped[br].push(s);
+        });
+        // Default data ke saath merge karo
+        setBranchStudents(prev => {
+          const merged = { ...prev };
+          Object.keys(grouped).forEach(br => {
+            merged[br] = grouped[br];
+          });
+          return merged;
+        });
+      } catch(e) {
+        console.log('Students load failed — using local data:', e.message);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    loadAllStudents();
+  }, []);
   const [modal, setModal]                   = useState(null);
   const [deleteInfo, setDeleteInfo]         = useState(null);
   const [search, setSearch]                 = useState('');
@@ -2014,6 +2083,13 @@ function BranchManagementPage() {
 
   // ── Branch List View ──
   if (!selectedBranch) {
+    if (dataLoading) return (
+      <div style={{textAlign:'center',padding:'60px 0'}}>
+        <div style={{fontSize:36,marginBottom:16}}>⏳</div>
+        <div style={{fontSize:16,fontWeight:600,color:'var(--text)'}}>Students load ho rahe hain...</div>
+        <div style={{fontSize:13,color:'var(--text3)',marginTop:8}}>MongoDB se data aa raha hai</div>
+      </div>
+    );
     return (
       <div>
         <div style={{marginBottom:20}}>
@@ -2086,6 +2162,21 @@ function BranchManagementPage() {
     );
   }
 
+  // ── Refresh function ──
+  const refreshStudents = async () => {
+    setDataLoading(true);
+    try {
+      const allStudents = await api('/api/students?branch='+selectedBranch?.code, 'GET', null, token);
+      if (allStudents && selectedBranch) {
+        setBranchStudents(p=>({...p,[selectedBranch.code]:allStudents}));
+      }
+    } catch(e) {
+      console.log('Refresh failed:', e.message);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   // ── Branch Detail View ──
   const branch = selectedBranch;
   const students = (branchStudents[branch.code] || []).filter(s =>
@@ -2109,9 +2200,26 @@ function BranchManagementPage() {
     setLoading(true);
     try {
       if(modal==='add-student') {
-        const newStudent = await api('/api/students','POST',{...studentForm,branch:branch.code},token);
+        // Step 1: Student ka user account banao — Roll No hi password hoga
+        try {
+          await api('/api/auth/register','POST',{
+            name: studentForm.name,
+            email: studentForm.email,
+            password: studentForm.rollNo,
+            role: 'student'
+          });
+        } catch(e) {
+          // Already exists — theek hai
+          console.log('User already exists:', e.message);
+        }
+        // Step 2: Student record MongoDB mein save karo
+        const newStudent = await api('/api/students','POST',{
+          ...studentForm,
+          branch: branch.code,
+          password: studentForm.rollNo
+        }, token);
         setBranchStudents(p=>({...p,[branch.code]:[...(p[branch.code]||[]),newStudent]}));
-        showToast('✅ Student add ho gaya! Welcome email bhi gayi 📧');
+        showToast('✅ Student add ho gaya! Email mein login details bhi gayi 📧');
       } else {
         const updated = await api('/api/students/'+studentForm._id,'PUT',studentForm,token);
         setBranchStudents(p=>({...p,[branch.code]:p[branch.code].map(s=>s._id===updated._id?updated:s)}));
@@ -2236,6 +2344,10 @@ function BranchManagementPage() {
             placeholder={activeTab==='students'?'Student naam ya roll no…':'Teacher naam ya email…'}
             value={search} onChange={e=>setSearch(e.target.value)}/>
         </div>
+        {/* Refresh Button */}
+        <button className="btn btn-secondary btn-sm" onClick={refreshStudents} title="MongoDB se fresh data load karo">
+          🔄 Refresh
+        </button>
         {/* Add Button */}
         <button className="btn btn-primary"
           style={{background:branch.color}}
@@ -2626,6 +2738,60 @@ function AnalyticsPage() {
 // ═══════════════════════════════════════════════════════════════════
 // 💳 FEE MANAGEMENT — Admin Page
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// 🌐 GLOBAL PAYMENT STORE — Student se Admin tak sync
+// ═══════════════════════════════════════════════════════════════
+const GLOBAL_FEE_STORE = {
+  _listeners: [],
+  _data: JSON.parse(localStorage.getItem('erp_fee_data') || 'null') || {
+    CS2023001: { name:'Arjun Mehta',  rollNo:'CS2023001', branch:'CS', sem:'4th', total:85000, paid:42500, due:42500, status:'partial', payments:[] },
+    CS2023002: { name:'Priya Sharma', rollNo:'CS2023002', branch:'CS', sem:'4th', total:85000, paid:60000, due:25000, status:'partial', payments:[] },
+    CS2023003: { name:'Rahul Verma',  rollNo:'CS2023003', branch:'CS', sem:'4th', total:85000, paid:0,     due:85000, status:'unpaid',  payments:[] },
+    CS2023004: { name:'Sneha Patel',  rollNo:'CS2023004', branch:'CS', sem:'4th', total:85000, paid:85000, due:0,     status:'paid',    payments:[] },
+    IT2023001: { name:'Kavya Nair',   rollNo:'IT2023001', branch:'IT', sem:'2nd', total:80000, paid:40000, due:40000, status:'partial', payments:[] },
+    IT2023002: { name:'Rohan Das',    rollNo:'IT2023002', branch:'IT', sem:'2nd', total:80000, paid:80000, due:0,     status:'paid',    payments:[] },
+    ME2023001: { name:'Ananya Iyer',  rollNo:'ME2023001', branch:'ME', sem:'6th', total:75000, paid:0,     due:75000, status:'overdue', payments:[] },
+    CS2023005: { name:'Vikram Rao',   rollNo:'CS2023005', branch:'CS', sem:'4th', total:85000, paid:85000, due:0,     status:'paid',    payments:[] },
+  },
+
+  subscribe(fn) { this._listeners.push(fn); return () => { this._listeners = this._listeners.filter(l=>l!==fn); }; },
+  notify() { this._listeners.forEach(fn=>fn(this._data)); localStorage.setItem('erp_fee_data', JSON.stringify(this._data)); },
+
+  getAll() { return Object.values(this._data); },
+
+  getByRollNo(rollNo) { return this._data[rollNo] || null; },
+
+  recordPayment(rollNo, amount, mode, receipt, date) {
+    if (!this._data[rollNo]) return;
+    const student = this._data[rollNo];
+    const newPaid   = Math.min(student.paid + amount, student.total);
+    const newDue    = student.total - newPaid;
+    const newStatus = newDue === 0 ? 'paid' : newPaid > 0 ? 'partial' : 'unpaid';
+    this._data[rollNo] = {
+      ...student,
+      paid: newPaid,
+      due: newDue,
+      status: newStatus,
+      payments: [{ date, amount, mode, receipt, status:'paid' }, ...(student.payments||[])],
+    };
+    this.notify();
+  },
+
+  adminRecordPayment(rollNo, amount) {
+    this.recordPayment(rollNo, amount, 'Cash (Admin)', 'ADM'+Date.now().toString().slice(-6), new Date().toISOString().split('T')[0]);
+  },
+};
+
+// Use localStorage event for cross-tab sync
+window.addEventListener('storage', (e) => {
+  if (e.key === 'erp_fee_data' && e.newValue) {
+    try {
+      GLOBAL_FEE_STORE._data = JSON.parse(e.newValue);
+      GLOBAL_FEE_STORE._listeners.forEach(fn=>fn(GLOBAL_FEE_STORE._data));
+    } catch(err) {}
+  }
+});
+
 const FEE_DATA_INIT = [
   {id:1, name:'Arjun Mehta',    rollNo:'CS2023001', branch:'CS', sem:'4th', total:85000, paid:85000, due:0,     dueDate:'2025-03-31', status:'paid'},
   {id:2, name:'Priya Sharma',   rollNo:'CS2023002', branch:'CS', sem:'4th', total:85000, paid:60000, due:25000, dueDate:'2025-03-31', status:'partial'},
@@ -2638,7 +2804,7 @@ const FEE_DATA_INIT = [
 ];
 
 function FeeMgmtPage() {
-  const [fees, setFees]         = useState(FEE_DATA_INIT);
+  const [fees, setFees]         = useState(()=>GLOBAL_FEE_STORE.getAll());
   const [search, setSearch]     = useState('');
   const [filter, setFilter]     = useState('all');
   const [modal, setModal]       = useState(null);
@@ -2646,8 +2812,24 @@ function FeeMgmtPage() {
   const [payAmt, setPayAmt]     = useState('');
   const [toast, setToast]       = useState('');
   const [emailStatus, setEmailStatus] = useState('');
+  const [newPaymentAlert, setNewPaymentAlert] = useState(null);
 
-  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3000); };
+  // Global store subscribe — jab student pay kare tab auto update
+  useEffect(() => {
+    const unsub = GLOBAL_FEE_STORE.subscribe((data) => {
+      const newFees = Object.values(data);
+      setFees(newFees);
+      // New payment alert dhundo
+      const latestPayment = newFees.flatMap(f=>(f.payments||[]).map(p=>({...p, studentName:f.name, rollNo:f.rollNo}))).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+      if (latestPayment && latestPayment.mode !== 'Cash (Admin)') {
+        setNewPaymentAlert(latestPayment);
+        setTimeout(()=>setNewPaymentAlert(null), 8000);
+      }
+    });
+    return unsub;
+  }, []);
+
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3500); };
 
   const totalFee     = fees.reduce((a,b)=>a+b.total,0);
   const totalPaid    = fees.reduce((a,b)=>a+b.paid,0);
@@ -2664,23 +2846,23 @@ function FeeMgmtPage() {
   const recordPayment = () => {
     if (!payAmt || isNaN(payAmt)) return alert('Valid amount dalo!');
     const amount = parseInt(payAmt);
-    setFees(prev => prev.map(f => {
-      if (f.id !== selected.id) return f;
-      const newPaid = Math.min(f.paid + amount, f.total);
-      const newDue  = f.total - newPaid;
-      const newStatus = newDue === 0 ? 'paid' : newPaid > 0 ? 'partial' : 'unpaid';
-      return { ...f, paid: newPaid, due: newDue, status: newStatus };
-    }));
-    showToast('✅ Payment recorded — Rs.' + amount.toLocaleString());
+    // Global store mein update karo
+    GLOBAL_FEE_STORE.adminRecordPayment(selected.rollNo, amount);
+    showToast('✅ Payment recorded — ₹' + amount.toLocaleString() + ' — ' + selected.name);
     setModal(null); setPayAmt('');
   };
 
-  const sendReminder = (student) => {
+  const sendReminder = async (student) => {
     setEmailStatus('sending');
-    setTimeout(() => {
-      setEmailStatus('');
-      showToast('📧 Reminder email bhej diya — ' + student.name + ' ko!');
-    }, 1500);
+    try {
+      await fetch(API_URL + '/api/fees/reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('erp_token')||'') },
+        body: JSON.stringify({ studentName: student.name, email: student.email || '', rollNo: student.rollNo, dueAmount: student.due, dueDate: student.dueDate })
+      });
+    } catch(e) {}
+    setEmailStatus('');
+    showToast('📧 Reminder email bhej diya — ' + student.name + ' ko!');
   };
 
   const statusColor = {
@@ -2692,10 +2874,39 @@ function FeeMgmtPage() {
 
   return (
     <div>
+      {/* Toast */}
       {toast && (
         <div style={{position:'fixed',top:20,right:20,zIndex:999,background:'var(--text)',color:'var(--surface)',
           padding:'12px 20px',borderRadius:10,fontSize:14,fontWeight:500,boxShadow:'0 4px 16px rgba(0,0,0,0.18)'}}>
           {toast}
+        </div>
+      )}
+
+      {/* 🔔 New Payment Alert — Student ne pay kiya! */}
+      {newPaymentAlert && (
+        <div style={{position:'fixed',top:20,right:20,zIndex:1000,background:'white',
+          border:'2px solid var(--green)',borderRadius:14,padding:'16px 20px',
+          boxShadow:'0 8px 32px rgba(0,0,0,0.15)',maxWidth:340,animation:'slideIn 0.3s ease'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+            <div style={{width:36,height:36,borderRadius:'50%',background:'var(--green-bg)',
+              display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>💰</div>
+            <div>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--green)'}}>New Payment Received!</div>
+              <div style={{fontSize:12,color:'var(--text3)'}}>Student portal se payment aayi</div>
+            </div>
+            <button onClick={()=>setNewPaymentAlert(null)}
+              style={{marginLeft:'auto',border:'none',background:'none',cursor:'pointer',color:'var(--text3)',fontSize:18}}>×</button>
+          </div>
+          <div style={{background:'var(--green-bg)',borderRadius:9,padding:'10px 14px'}}>
+            <div style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>{newPaymentAlert.studentName}</div>
+            <div style={{fontSize:12,color:'var(--text3)'}}>{newPaymentAlert.rollNo}</div>
+            <div style={{fontSize:20,fontWeight:800,color:'var(--green)',marginTop:4}}>
+              ₹{newPaymentAlert.amount?.toLocaleString()}
+            </div>
+            <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>
+              {newPaymentAlert.mode} · {newPaymentAlert.receipt}
+            </div>
+          </div>
         </div>
       )}
 
@@ -2822,64 +3033,447 @@ function FeeMgmtPage() {
 // 💳 FEE DETAILS — Student View
 // ═══════════════════════════════════════════════════════════════════
 function FeeDetailsPage({ user }) {
-  const myFee = FEE_DATA_INIT.find(f => f.rollNo === 'CS2023001') || FEE_DATA_INIT[0];
-  const pct = Math.round(myFee.paid / myFee.total * 100);
+  const myRollNo = 'CS2023001'; // Real system mein user.rollNo hoga
+  const storedFee = GLOBAL_FEE_STORE.getByRollNo(myRollNo);
+
+  const [feeData, setFeeData] = useState({
+    name: user?.name || storedFee?.name || 'Student',
+    rollNo: myRollNo,
+    semester: storedFee?.sem ? storedFee.sem+' Semester' : '4th Semester',
+    branch: 'Computer Science',
+    academicYear: '2024-25',
+    totalFee: storedFee?.total || 85000,
+    paid: storedFee?.paid || 42500,
+    due: storedFee?.due || 42500,
+    dueDate: '30 April 2025',
+    status: 'pending',
+    breakdown: [
+      { label: 'Tuition Fee',    amount: 50000 },
+      { label: 'Lab Fee',        amount: 10000 },
+      { label: 'Library Fee',    amount: 5000  },
+      { label: 'Sports Fee',     amount: 3000  },
+      { label: 'Exam Fee',       amount: 7000  },
+      { label: 'Development Fee',amount: 10000 },
+    ],
+    payments: storedFee?.payments?.length ? storedFee.payments : [
+      { date:'2025-01-10', amount:42500, mode:'Online', receipt:'RCP2025001', status:'paid' },
+    ]
+  });
+
+  const [payModal, setPayModal]     = useState(false);
+  const [payAmount, setPayAmount]   = useState('');
+  const [payMode, setPayMode]       = useState('upi');
+  const [upiId, setUpiId]           = useState('');
+  const [cardNo, setCardNo]         = useState('');
+  const [cardName, setCardName]     = useState('');
+  const [cardExp, setCardExp]       = useState('');
+  const [cardCvv, setCardCvv]       = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [receiptModal, setReceiptModal] = useState(null);
+  const [toast, setToast]           = useState('');
+
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),4000); };
+  const pct = Math.round((feeData.paid / feeData.totalFee) * 100);
+
+  const handlePayment = async () => {
+    if (!payAmount || isNaN(payAmount) || +payAmount <= 0) {
+      alert('Sahi amount enter karo!'); return;
+    }
+    if (+payAmount > feeData.due) {
+      alert('Amount Rs.'+feeData.due.toLocaleString()+' se zyada nahi ho sakta!'); return;
+    }
+    if (payMode === 'upi' && !upiId) { alert('UPI ID enter karo!'); return; }
+    if (payMode === 'card' && (!cardNo || !cardName || !cardExp || !cardCvv)) {
+      alert('Card ki sab details bharo!'); return;
+    }
+    setProcessing(true);
+
+    // Payment simulate karo — 2 second processing
+    await new Promise(r => setTimeout(r, 2000));
+
+    const receiptNo = 'RCP' + Date.now().toString().slice(-6);
+    const newPayment = {
+      date: new Date().toISOString().split('T')[0],
+      amount: +payAmount,
+      mode: payMode === 'upi' ? 'UPI' : payMode === 'card' ? 'Card' : 'Net Banking',
+      receipt: receiptNo,
+      status: 'paid',
+      upiId: payMode === 'upi' ? upiId : null,
+    };
+
+    const newPaid = feeData.paid + +payAmount;
+    const newDue  = feeData.due - +payAmount;
+
+    setFeeData(p => ({
+      ...p,
+      paid: newPaid,
+      due: newDue,
+      status: newDue <= 0 ? 'paid' : 'pending',
+      payments: [newPayment, ...p.payments],
+    }));
+
+    // 🌐 Global store mein update karo — Admin ko dikhe
+    GLOBAL_FEE_STORE.recordPayment(
+      feeData.rollNo,
+      +payAmount,
+      newPayment.mode,
+      receiptNo,
+      newPayment.date
+    );
+
+    setProcessing(false);
+    setPayModal(false);
+    setPayAmount(''); setUpiId(''); setCardNo(''); setCardName(''); setCardExp(''); setCardCvv('');
+    setReceiptModal(newPayment);
+    showToast('✅ Payment successful! Receipt email pe bhi bhej di gayi 📧');
+
+    // Backend ko email bhejne ke liye call karo
+    try {
+      await fetch(API_URL + '/api/fees/receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('erp_token')||'') },
+        body: JSON.stringify({
+          studentName: feeData.name,
+          email: user?.email || '',
+          rollNo: feeData.rollNo,
+          amount: +payAmount,
+          receipt: receiptNo,
+          mode: newPayment.mode,
+          semester: feeData.semester,
+          date: newPayment.date,
+          totalFee: feeData.totalFee,
+          totalPaid: newPaid,
+          totalDue: newDue,
+        })
+      });
+    } catch(e) { console.log('Email send failed:', e.message); }
+  };
+
   return (
     <div>
-      <div className="grid-2" style={{marginBottom:20}}>
-        <div className="card">
-          <div className="card-header"><div className="card-title">💳 Fee Summary</div></div>
-          <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            {[
-              {label:'Total Fee',   value:'Rs.'+myFee.total.toLocaleString(), color:'var(--text)'},
-              {label:'Amount Paid', value:'Rs.'+myFee.paid.toLocaleString(),  color:'var(--green)'},
-              {label:'Amount Due',  value:myFee.due>0?'Rs.'+myFee.due.toLocaleString():'Nil', color:myFee.due>0?'var(--red)':'var(--green)'},
-              {label:'Due Date',    value:myFee.dueDate, color:'var(--text)'},
-            ].map(item=>(
-              <div key={item.label} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid var(--border)'}}>
-                <span style={{fontSize:14,color:'var(--text2)'}}>{item.label}</span>
-                <span style={{fontSize:14,fontWeight:600,color:item.color}}>{item.value}</span>
-              </div>
-            ))}
+      {/* Toast */}
+      {toast && (
+        <div style={{position:'fixed',top:20,right:20,zIndex:999,background:'#16a34a',color:'white',
+          padding:'14px 20px',borderRadius:10,fontSize:14,fontWeight:600,boxShadow:'0 4px 16px rgba(0,0,0,0.18)',maxWidth:360}}>
+          {toast}
+        </div>
+      )}
+
+      {/* Stats */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:20}}>
+        <div className="stat-card">
+          <div className="stat-label">Total Fee</div>
+          <div className="stat-value">₹{feeData.totalFee.toLocaleString()}</div>
+          <div className="stat-sub" style={{color:'var(--text3)'}}>{feeData.semester}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Paid</div>
+          <div className="stat-value" style={{color:'var(--green)'}}>₹{feeData.paid.toLocaleString()}</div>
+          <div className="stat-sub"><span className="stat-badge badge-green">{pct}% complete</span></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Due</div>
+          <div className="stat-value" style={{color:feeData.due>0?'var(--red)':'var(--green)'}}>
+            {feeData.due>0 ? '₹'+feeData.due.toLocaleString() : 'Nil ✓'}
           </div>
-          <div style={{marginTop:16}}>
+          <div className="stat-sub"><span className={`stat-badge ${feeData.due>0?'badge-red':'badge-green'}`}>{feeData.due>0?'Due: '+feeData.dueDate:'Fully Paid!'}</span></div>
+        </div>
+      </div>
+
+      <div className="grid-2" style={{marginBottom:20}}>
+        {/* Fee Summary Card */}
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">💳 Fee Summary</div>
+            <span className={`chip ${feeData.status==='paid'?'badge-green':'badge-amber'}`}>
+              {feeData.status==='paid'?'✅ Fully Paid':'⏳ Pending'}
+            </span>
+          </div>
+
+          {/* Progress Bar */}
+          <div style={{marginBottom:16}}>
             <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
               <span style={{fontSize:13,color:'var(--text3)'}}>Payment Progress</span>
-              <span style={{fontSize:13,fontWeight:600,color:pct===100?'var(--green)':'var(--amber)'}}>{pct}%</span>
+              <span style={{fontSize:13,fontWeight:700,color:pct===100?'var(--green)':'var(--amber)'}}>{pct}%</span>
             </div>
-            <div className="progress-bar" style={{height:10}}>
-              <div className="progress-fill" style={{width:pct+'%',background:pct===100?'var(--green)':'var(--amber)'}}/>
+            <div style={{height:12,background:'var(--border)',borderRadius:99,overflow:'hidden'}}>
+              <div style={{height:'100%',width:pct+'%',background:pct===100?'var(--green)':'var(--amber)',borderRadius:99,transition:'width 0.5s'}}/>
             </div>
           </div>
-          {myFee.status==='paid' ? (
-            <div style={{marginTop:14,padding:'10px 14px',background:'var(--green-bg)',borderRadius:8,color:'var(--green)',fontWeight:600,fontSize:14}}>
-              🎉 Aapki puri fee jama ho gayi hai!
+
+          {/* Fee Details */}
+          {[
+            {label:'Student Name',  value:feeData.name},
+            {label:'Roll No',       value:feeData.rollNo},
+            {label:'Branch',        value:feeData.branch},
+            {label:'Semester',      value:feeData.semester},
+            {label:'Academic Year', value:feeData.academicYear},
+            {label:'Total Fee',     value:'₹'+feeData.totalFee.toLocaleString()},
+            {label:'Amount Paid',   value:'₹'+feeData.paid.toLocaleString(), green:true},
+            {label:'Amount Due',    value:feeData.due>0?'₹'+feeData.due.toLocaleString():'Nil', red:feeData.due>0, green:feeData.due<=0},
+            {label:'Due Date',      value:feeData.dueDate},
+          ].map(item=>(
+            <div key={item.label} style={{display:'flex',justifyContent:'space-between',padding:'9px 0',borderBottom:'1px solid var(--border)'}}>
+              <span style={{fontSize:13,color:'var(--text3)'}}>{item.label}</span>
+              <span style={{fontSize:13,fontWeight:600,color:item.green?'var(--green)':item.red?'var(--red)':'var(--text)'}}>{item.value}</span>
             </div>
+          ))}
+
+          {/* Pay Now Button */}
+          {feeData.due > 0 ? (
+            <button onClick={()=>setPayModal(true)}
+              style={{width:'100%',marginTop:16,padding:'13px',background:'var(--accent)',color:'white',
+                border:'none',borderRadius:10,fontSize:15,fontWeight:700,cursor:'pointer',
+                display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              💳 Pay Now — ₹{feeData.due.toLocaleString()}
+            </button>
           ) : (
-            <div style={{marginTop:14,padding:'10px 14px',background:'var(--amber-bg)',borderRadius:8,color:'var(--amber)',fontWeight:600,fontSize:14}}>
-              ⚠️ Rs.{myFee.due.toLocaleString()} abhi baki hai — jaldi jama karo!
+            <div style={{marginTop:16,padding:'12px',background:'var(--green-bg)',borderRadius:9,
+              textAlign:'center',color:'var(--green)',fontWeight:700,fontSize:15}}>
+              🎉 Puri fee jama ho gayi hai! Badhaai ho!
             </div>
           )}
         </div>
+
+        {/* Fee Breakdown */}
         <div className="card">
-          <div className="card-header"><div className="card-title">📋 Payment History</div></div>
-          {[
-            {date:'2025-01-10', amount:42500, mode:'Online', receipt:'RCP001'},
-            {date:'2025-02-15', amount:42500, mode:'Cash',   receipt:'RCP002'},
-          ].map((p,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'center',gap:14,padding:'12px 0',borderBottom:'1px solid var(--border)'}}>
-              <div style={{width:36,height:36,borderRadius:9,background:'var(--green-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>
-                💰
+          <div className="card-header"><div className="card-title">📊 Fee Breakdown</div></div>
+          {feeData.breakdown.map((item,i)=>(
+            <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+              padding:'10px 0',borderBottom:i<feeData.breakdown.length-1?'1px solid var(--border)':'none'}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <div style={{width:8,height:8,borderRadius:'50%',background:'var(--accent)'}}/>
+                <span style={{fontSize:14,color:'var(--text2)'}}>{item.label}</span>
               </div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:14,fontWeight:500}}>Rs.{p.amount.toLocaleString()}</div>
-                <div style={{fontSize:12,color:'var(--text3)'}}>{p.date} · {p.mode} · {p.receipt}</div>
-              </div>
-              <span className="chip badge-green">✅ Paid</span>
+              <span style={{fontSize:14,fontWeight:600}}>₹{item.amount.toLocaleString()}</span>
             </div>
           ))}
+          <div style={{display:'flex',justifyContent:'space-between',marginTop:14,paddingTop:12,
+            borderTop:'2px solid var(--border)'}}>
+            <span style={{fontSize:15,fontWeight:700}}>Total</span>
+            <span style={{fontSize:15,fontWeight:700,color:'var(--accent)'}}>₹{feeData.totalFee.toLocaleString()}</span>
+          </div>
         </div>
       </div>
+
+      {/* Payment History */}
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">📋 Payment History</div>
+          <span className="chip badge-blue">{feeData.payments.length} transactions</span>
+        </div>
+        {feeData.payments.length === 0 ? (
+          <div style={{textAlign:'center',padding:32,color:'var(--text3)'}}>Koi payment nahi mili abhi tak</div>
+        ) : feeData.payments.map((p,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'center',gap:14,padding:'14px 0',
+            borderBottom:i<feeData.payments.length-1?'1px solid var(--border)':'none'}}>
+            <div style={{width:42,height:42,borderRadius:10,background:'var(--green-bg)',
+              display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>
+              💰
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15,fontWeight:600}}>₹{p.amount.toLocaleString()}</div>
+              <div style={{fontSize:12,color:'var(--text3)',marginTop:3}}>
+                📅 {p.date} &nbsp;·&nbsp; {p.mode} &nbsp;·&nbsp; 🧾 {p.receipt}
+                {p.upiId && <span> &nbsp;·&nbsp; UPI: {p.upiId}</span>}
+              </div>
+            </div>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <span className="chip badge-green">✅ Paid</span>
+              <button onClick={()=>setReceiptModal(p)}
+                style={{padding:'5px 12px',border:'1px solid var(--border)',borderRadius:7,
+                  background:'var(--surface)',cursor:'pointer',fontSize:12,color:'var(--text2)'}}>
+                🧾 Receipt
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── PAYMENT MODAL ── */}
+      {payModal && (
+        <div className="modal-overlay" onClick={()=>!processing&&setPayModal(false)}>
+          <div className="modal" style={{width:480}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <div className="modal-title" style={{margin:0}}>💳 Fee Payment</div>
+              {!processing && <button onClick={()=>setPayModal(false)} style={{border:'none',background:'none',cursor:'pointer',color:'var(--text3)'}}><Icon name="close" size={18}/></button>}
+            </div>
+
+            {processing ? (
+              <div style={{textAlign:'center',padding:'40px 0'}}>
+                <div style={{fontSize:40,marginBottom:16}}>⏳</div>
+                <div style={{fontSize:16,fontWeight:600,color:'var(--text)'}}>Payment Processing...</div>
+                <div style={{fontSize:13,color:'var(--text3)',marginTop:8}}>Kripya wait karo — page band mat karo!</div>
+                <div style={{marginTop:20,height:6,background:'var(--border)',borderRadius:99,overflow:'hidden'}}>
+                  <div style={{height:'100%',width:'70%',background:'var(--accent)',borderRadius:99,animation:'progress 2s ease-in-out'}}/>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Amount */}
+                <div style={{background:'var(--accent-bg)',border:'1px solid var(--accent-border)',borderRadius:10,padding:'14px 16px',marginBottom:16}}>
+                  <div style={{fontSize:12,color:'var(--accent)',marginBottom:4}}>Outstanding Amount</div>
+                  <div style={{fontSize:24,fontWeight:800,color:'var(--accent)'}}>₹{feeData.due.toLocaleString()}</div>
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label className="form-label">Pay Amount (₹) *</label>
+                  <input className="form-input" type="number" min="1" max={feeData.due}
+                    placeholder={'Max: ₹'+feeData.due.toLocaleString()}
+                    value={payAmount} onChange={e=>setPayAmount(e.target.value)}/>
+                  <div style={{display:'flex',gap:8,marginTop:8}}>
+                    {[feeData.due, Math.round(feeData.due/2), 10000].map(amt=>(
+                      <button key={amt} onClick={()=>setPayAmount(amt.toString())}
+                        style={{flex:1,padding:'6px',border:'1px solid var(--accent-border)',borderRadius:7,
+                          background:'var(--accent-bg)',cursor:'pointer',fontSize:12,color:'var(--accent)',fontWeight:600}}>
+                        ₹{amt.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment Mode */}
+                <div style={{marginBottom:16}}>
+                  <label className="form-label">Payment Mode *</label>
+                  <div style={{display:'flex',gap:8}}>
+                    {[['upi','📱 UPI'],['card','💳 Card'],['netbanking','🏦 Net Banking']].map(([mode,label])=>(
+                      <button key={mode} onClick={()=>setPayMode(mode)}
+                        style={{flex:1,padding:'10px 8px',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:500,
+                          border:payMode===mode?'2px solid var(--accent)':'1px solid var(--border)',
+                          background:payMode===mode?'var(--accent-bg)':'var(--surface)',
+                          color:payMode===mode?'var(--accent)':'var(--text2)'}}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* UPI Fields */}
+                {payMode==='upi' && (
+                  <div style={{marginBottom:14}}>
+                    <label className="form-label">UPI ID *</label>
+                    <input className="form-input" placeholder="e.g. ayush@okaxis"
+                      value={upiId} onChange={e=>setUpiId(e.target.value)}/>
+                    <div style={{fontSize:12,color:'var(--text3)',marginTop:4}}>
+                      College UPI: <strong>collegeerp@sbi</strong>
+                    </div>
+                  </div>
+                )}
+
+                {/* Card Fields */}
+                {payMode==='card' && (
+                  <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:14}}>
+                    <div>
+                      <label className="form-label">Card Number *</label>
+                      <input className="form-input" placeholder="1234 5678 9012 3456" maxLength={19}
+                        value={cardNo} onChange={e=>setCardNo(e.target.value.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim())}/>
+                    </div>
+                    <div>
+                      <label className="form-label">Cardholder Name *</label>
+                      <input className="form-input" placeholder="Ayush Kumar"
+                        value={cardName} onChange={e=>setCardName(e.target.value)}/>
+                    </div>
+                    <div className="grid-2" style={{gap:12}}>
+                      <div>
+                        <label className="form-label">Expiry *</label>
+                        <input className="form-input" placeholder="MM/YY" maxLength={5}
+                          value={cardExp} onChange={e=>setCardExp(e.target.value)}/>
+                      </div>
+                      <div>
+                        <label className="form-label">CVV *</label>
+                        <input className="form-input" placeholder="123" maxLength={3} type="password"
+                          value={cardCvv} onChange={e=>setCardCvv(e.target.value)}/>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Net Banking */}
+                {payMode==='netbanking' && (
+                  <div style={{marginBottom:14}}>
+                    <label className="form-label">Bank Select Karo</label>
+                    <select className="form-input">
+                      {['SBI','HDFC Bank','ICICI Bank','Axis Bank','PNB','Bank of Baroda','Canara Bank'].map(b=>(
+                        <option key={b}>{b}</option>
+                      ))}
+                    </select>
+                    <div style={{fontSize:12,color:'var(--text3)',marginTop:4}}>
+                      Aapko bank ke portal pe redirect kiya jayega
+                    </div>
+                  </div>
+                )}
+
+                {/* Security Note */}
+                <div style={{padding:'10px 14px',background:'var(--surface2)',borderRadius:8,marginBottom:16}}>
+                  <div style={{fontSize:12,color:'var(--text3)'}}>
+                    🔒 Yeh payment secure hai — SSL encrypted
+                  </div>
+                </div>
+
+                <div className="modal-footer" style={{marginTop:0}}>
+                  <button className="btn btn-secondary" onClick={()=>setPayModal(false)}>Cancel</button>
+                  <button onClick={handlePayment}
+                    style={{padding:'10px 24px',background:'var(--accent)',color:'white',border:'none',
+                      borderRadius:9,fontSize:15,fontWeight:700,cursor:'pointer'}}>
+                    💳 Pay ₹{payAmount?Number(payAmount).toLocaleString():'—'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── RECEIPT MODAL ── */}
+      {receiptModal && (
+        <div className="modal-overlay" onClick={()=>setReceiptModal(null)}>
+          <div className="modal" style={{width:440}} onClick={e=>e.stopPropagation()}>
+            <div style={{textAlign:'center',padding:'10px 0 20px'}}>
+              <div style={{fontSize:48,marginBottom:8}}>🎉</div>
+              <div style={{fontSize:20,fontWeight:800,color:'var(--green)'}}>Payment Successful!</div>
+              <div style={{fontSize:13,color:'var(--text3)',marginTop:4}}>Receipt aapki email pe bhi bhej di gayi hai 📧</div>
+            </div>
+
+            {/* Receipt */}
+            <div style={{background:'var(--bg)',border:'2px dashed var(--border)',borderRadius:12,padding:'20px'}}>
+              <div style={{textAlign:'center',marginBottom:16}}>
+                <div style={{fontSize:16,fontWeight:800,color:'var(--accent)'}}>🎓 EduERP</div>
+                <div style={{fontSize:12,color:'var(--text3)'}}>Fee Payment Receipt</div>
+              </div>
+              {[
+                {label:'Receipt No',   value:receiptModal.receipt},
+                {label:'Student Name', value:feeData.name},
+                {label:'Roll No',      value:feeData.rollNo},
+                {label:'Semester',     value:feeData.semester},
+                {label:'Payment Date', value:receiptModal.date},
+                {label:'Amount Paid',  value:'₹'+receiptModal.amount.toLocaleString()},
+                {label:'Mode',         value:receiptModal.mode},
+                {label:'Total Paid',   value:'₹'+feeData.paid.toLocaleString()},
+                {label:'Balance Due',  value:feeData.due>0?'₹'+feeData.due.toLocaleString():'Nil ✅'},
+              ].map(item=>(
+                <div key={item.label} style={{display:'flex',justifyContent:'space-between',
+                  padding:'7px 0',borderBottom:'1px dashed var(--border)'}}>
+                  <span style={{fontSize:13,color:'var(--text3)'}}>{item.label}</span>
+                  <span style={{fontSize:13,fontWeight:600}}>{item.value}</span>
+                </div>
+              ))}
+              <div style={{marginTop:14,padding:'10px',background:'var(--green-bg)',borderRadius:8,
+                textAlign:'center',color:'var(--green)',fontWeight:600,fontSize:13}}>
+                ✅ Payment Verified & Confirmed
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setReceiptModal(null)}>Close</button>
+              <button onClick={()=>window.print()}
+                style={{padding:'8px 20px',background:'var(--accent)',color:'white',border:'none',
+                  borderRadius:8,cursor:'pointer',fontWeight:600,fontSize:14}}>
+                🖨️ Print Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3093,6 +3687,338 @@ function usePushNotifications() {
 }
 
 
+
+// ─── Teacher Chat — WhatsApp Style ───────────────────────────────────────────
+
+// Global chat store — sab teachers ke messages
+const CHAT_STORAGE_KEY = 'erp_teacher_chat';
+
+const getChatStore = () => {
+  try {
+    return JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '[]');
+  } catch(e) { return []; }
+};
+
+const saveChatStore = (msgs) => {
+  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(msgs));
+  window.dispatchEvent(new Event('erp_chat_update'));
+};
+
+const TEACHER_LIST = [
+  { id: 'teacher1', name: 'Prof. Anjali Singh',  dept: 'CS',  avatar: 'AS', color: '#7c3aed' },
+  { id: 'teacher2', name: 'Dr. Suresh Nair',     dept: 'CS',  avatar: 'SN', color: '#2563eb' },
+  { id: 'teacher3', name: 'Prof. Meena Rao',     dept: 'IT',  avatar: 'MR', color: '#16a34a' },
+  { id: 'teacher4', name: 'Dr. Alok Gupta',      dept: 'ME',  avatar: 'AG', color: '#d97706' },
+  { id: 'teacher5', name: 'Prof. Rekha Soni',    dept: 'EE',  avatar: 'RS', color: '#dc2626' },
+];
+
+function TeacherChatPage({ user }) {
+  const myName    = user?.name || 'Prof. Anjali Singh';
+  const myTeacher = TEACHER_LIST.find(t => t.name === myName) || TEACHER_LIST[0];
+
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [messages, setMessages]               = useState([]);
+  const [allMessages, setAllMessages]         = useState(getChatStore);
+  const [input, setInput]                     = useState('');
+  const [search, setSearch]                   = useState('');
+  const [typing, setTyping]                   = useState(false);
+  const messagesEndRef                        = React.useRef(null);
+  const inputRef                              = React.useRef(null);
+
+  // Poll for new messages every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const fresh = getChatStore();
+      setAllMessages(fresh);
+    }, 2000);
+
+    const onUpdate = () => setAllMessages(getChatStore());
+    window.addEventListener('erp_chat_update', onUpdate);
+    window.addEventListener('storage', onUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('erp_chat_update', onUpdate);
+      window.removeEventListener('storage', onUpdate);
+    };
+  }, []);
+
+  // Filter messages for selected conversation
+  useEffect(() => {
+    if (!selectedTeacher) return;
+    const convMsgs = allMessages.filter(m =>
+      (m.senderId === myTeacher.id && m.receiverId === selectedTeacher.id) ||
+      (m.senderId === selectedTeacher.id && m.receiverId === myTeacher.id)
+    );
+    setMessages(convMsgs);
+  }, [allMessages, selectedTeacher]);
+
+  // Auto scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const sendMessage = () => {
+    if (!input.trim() || !selectedTeacher) return;
+    const newMsg = {
+      id: Date.now(),
+      senderId:   myTeacher.id,
+      senderName: myTeacher.name,
+      receiverId: selectedTeacher.id,
+      text:       input.trim(),
+      time:       new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }),
+      date:       new Date().toLocaleDateString('en-IN'),
+      timestamp:  Date.now(),
+    };
+    const updated = [...getChatStore(), newMsg];
+    saveChatStore(updated);
+    setAllMessages(updated);
+    setInput('');
+    inputRef.current?.focus();
+  };
+
+  // Get last message for each teacher in sidebar
+  const getLastMsg = (teacher) => {
+    const msgs = allMessages.filter(m =>
+      (m.senderId === myTeacher.id && m.receiverId === teacher.id) ||
+      (m.senderId === teacher.id && m.receiverId === myTeacher.id)
+    );
+    return msgs[msgs.length - 1] || null;
+  };
+
+  const getUnreadCount = (teacher) => {
+    return allMessages.filter(m =>
+      m.senderId === teacher.id && m.receiverId === myTeacher.id && !m.read
+    ).length;
+  };
+
+  const otherTeachers = TEACHER_LIST.filter(t => t.id !== myTeacher.id)
+    .filter(t => t.name.toLowerCase().includes(search.toLowerCase()) ||
+                 t.dept.toLowerCase().includes(search.toLowerCase()));
+
+  const formatDate = (date) => {
+    const today = new Date().toLocaleDateString('en-IN');
+    return date === today ? 'Today' : date;
+  };
+
+  // Group messages by date
+  const groupedMessages = messages.reduce((groups, msg) => {
+    const date = formatDate(msg.date);
+    if (!groups[date]) groups[date] = [];
+    groups[date].push(msg);
+    return groups;
+  }, {});
+
+  return (
+    <div style={{display:'flex',height:'calc(100vh - 130px)',background:'var(--surface)',
+      border:'1px solid var(--border)',borderRadius:14,overflow:'hidden'}}>
+
+      {/* ── LEFT: Teacher List ── */}
+      <div style={{width:300,borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',flexShrink:0}}>
+
+        {/* Header */}
+        <div style={{padding:'16px 16px 12px',borderBottom:'1px solid var(--border)'}}>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:12}}>💬 Teacher Chat</div>
+          {/* Search */}
+          <div style={{position:'relative'}}>
+            <div style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',opacity:0.4}}>
+              <Icon name="search" size={14}/>
+            </div>
+            <input className="form-input" placeholder="Search teachers..." value={search}
+              onChange={e=>setSearch(e.target.value)}
+              style={{paddingLeft:32,fontSize:13,padding:'8px 8px 8px 32px'}}/>
+          </div>
+        </div>
+
+        {/* My Profile */}
+        <div style={{padding:'10px 16px',background:'var(--accent-bg)',borderBottom:'1px solid var(--accent-border)',
+          display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:34,height:34,borderRadius:'50%',background:myTeacher.color,
+            color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+            fontSize:12,fontWeight:700,flexShrink:0}}>
+            {myTeacher.avatar}
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>{myTeacher.name}</div>
+            <div style={{fontSize:11,color:'var(--accent)'}}>● Online</div>
+          </div>
+        </div>
+
+        {/* Teacher List */}
+        <div style={{flex:1,overflowY:'auto'}}>
+          {otherTeachers.map(teacher => {
+            const lastMsg   = getLastMsg(teacher);
+            const unread    = getUnreadCount(teacher);
+            const isActive  = selectedTeacher?.id === teacher.id;
+
+            return (
+              <div key={teacher.id} onClick={()=>setSelectedTeacher(teacher)}
+                style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',
+                  cursor:'pointer',borderBottom:'1px solid var(--border)',
+                  background:isActive?'var(--accent-bg)':'transparent',
+                  transition:'background 0.15s'}}>
+
+                {/* Avatar */}
+                <div style={{position:'relative',flexShrink:0}}>
+                  <div style={{width:42,height:42,borderRadius:'50%',background:teacher.color,
+                    color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+                    fontSize:13,fontWeight:700}}>
+                    {teacher.avatar}
+                  </div>
+                  <div style={{position:'absolute',bottom:1,right:1,width:10,height:10,
+                    borderRadius:'50%',background:'var(--green)',border:'2px solid var(--surface)'}}/>
+                </div>
+
+                {/* Info */}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>{teacher.name.split(' ').slice(1).join(' ')}</span>
+                    {lastMsg && <span style={{fontSize:11,color:'var(--text3)'}}>{lastMsg.time}</span>}
+                  </div>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:2}}>
+                    <span style={{fontSize:12,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:150}}>
+                      {lastMsg ? (lastMsg.senderId===myTeacher.id?'You: ':'')+lastMsg.text : `Dept: ${teacher.dept}`}
+                    </span>
+                    {unread > 0 && (
+                      <span style={{background:'var(--accent)',color:'white',borderRadius:99,
+                        padding:'1px 7px',fontSize:11,fontWeight:700,flexShrink:0}}>
+                        {unread}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── RIGHT: Chat Window ── */}
+      {!selectedTeacher ? (
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',
+          flexDirection:'column',gap:16,color:'var(--text3)'}}>
+          <div style={{fontSize:56}}>💬</div>
+          <div style={{fontSize:16,fontWeight:600,color:'var(--text)'}}>Select a teacher to chat</div>
+          <div style={{fontSize:13}}>Left side se kisi bhi teacher ko select karo</div>
+        </div>
+      ) : (
+        <div style={{flex:1,display:'flex',flexDirection:'column'}}>
+
+          {/* Chat Header */}
+          <div style={{padding:'14px 20px',borderBottom:'1px solid var(--border)',
+            display:'flex',alignItems:'center',gap:12,background:'var(--surface)'}}>
+            <div style={{width:38,height:38,borderRadius:'50%',background:selectedTeacher.color,
+              color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:13,fontWeight:700,flexShrink:0}}>
+              {selectedTeacher.avatar}
+            </div>
+            <div>
+              <div style={{fontSize:15,fontWeight:700}}>{selectedTeacher.name}</div>
+              <div style={{fontSize:12,color:'var(--green)'}}>● Online · Dept: {selectedTeacher.dept}</div>
+            </div>
+          </div>
+
+          {/* Messages Area */}
+          <div style={{flex:1,overflowY:'auto',padding:'16px 20px',
+            background:'var(--bg)',display:'flex',flexDirection:'column',gap:4}}>
+
+            {Object.keys(groupedMessages).length === 0 ? (
+              <div style={{textAlign:'center',marginTop:60,color:'var(--text3)'}}>
+                <div style={{fontSize:40,marginBottom:12}}>👋</div>
+                <div style={{fontSize:15,fontWeight:600,color:'var(--text)'}}>
+                  Start a conversation with {selectedTeacher.name.split(' ')[1]}!
+                </div>
+                <div style={{fontSize:13,marginTop:6}}>Abhi koi message nahi hai — pehla message bhejo!</div>
+              </div>
+            ) : (
+              Object.entries(groupedMessages).map(([date, msgs]) => (
+                <div key={date}>
+                  {/* Date Divider */}
+                  <div style={{display:'flex',alignItems:'center',gap:12,margin:'12px 0'}}>
+                    <div style={{flex:1,height:1,background:'var(--border)'}}/>
+                    <span style={{fontSize:12,color:'var(--text3)',background:'var(--bg)',
+                      padding:'2px 12px',borderRadius:99,border:'1px solid var(--border)'}}>
+                      {date}
+                    </span>
+                    <div style={{flex:1,height:1,background:'var(--border)'}}/>
+                  </div>
+
+                  {/* Messages */}
+                  {msgs.map((msg, idx) => {
+                    const isMe = msg.senderId === myTeacher.id;
+                    const showAvatar = !isMe && (idx === 0 || msgs[idx-1]?.senderId !== msg.senderId);
+                    return (
+                      <div key={msg.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start',
+                        marginBottom:4,alignItems:'flex-end',gap:8}}>
+
+                        {/* Other person avatar */}
+                        {!isMe && (
+                          <div style={{width:28,height:28,borderRadius:'50%',
+                            background:showAvatar?selectedTeacher.color:'transparent',
+                            color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+                            fontSize:11,fontWeight:700,flexShrink:0}}>
+                            {showAvatar ? selectedTeacher.avatar : ''}
+                          </div>
+                        )}
+
+                        {/* Message Bubble */}
+                        <div style={{maxWidth:'65%'}}>
+                          <div style={{
+                            padding:'9px 14px',
+                            borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                            background: isMe ? 'var(--accent)' : 'var(--surface)',
+                            color: isMe ? 'white' : 'var(--text)',
+                            border: isMe ? 'none' : '1px solid var(--border)',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                            fontSize: 14,
+                            lineHeight: 1.5,
+                          }}>
+                            {msg.text}
+                          </div>
+                          <div style={{fontSize:11,color:'var(--text3)',marginTop:3,
+                            textAlign:isMe?'right':'left',paddingLeft:isMe?0:4,paddingRight:isMe?4:0}}>
+                            {msg.time} {isMe && '✓✓'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef}/>
+          </div>
+
+          {/* Input Area */}
+          <div style={{padding:'12px 16px',borderTop:'1px solid var(--border)',
+            background:'var(--surface)',display:'flex',gap:10,alignItems:'flex-end'}}>
+            <div style={{flex:1,background:'var(--bg)',border:'1px solid var(--border)',
+              borderRadius:24,padding:'10px 16px',display:'flex',alignItems:'center'}}>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={e=>setInput(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&(e.preventDefault(),sendMessage())}
+                placeholder="Message likho..."
+                style={{flex:1,border:'none',background:'transparent',outline:'none',
+                  fontSize:14,color:'var(--text)',fontFamily:'inherit'}}
+              />
+            </div>
+            {/* Send Button */}
+            <button onClick={sendMessage} disabled={!input.trim()}
+              style={{width:44,height:44,borderRadius:'50%',border:'none',
+                background:input.trim()?'var(--accent)':'var(--border)',
+                color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+                cursor:input.trim()?'pointer':'default',transition:'all 0.2s',flexShrink:0}}>
+              <Icon name="send" size={18} color="white"/>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── App Shell ────────────────────────────────────────────────────────────────
 const PAGE_TITLES = {
   dashboard:'Dashboard', attendance:'My Attendance', marks:'My Marks', timetable:'Timetable',
@@ -3105,6 +4031,7 @@ const PAGE_TITLES = {
 function App() {
   const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const token = user?.token || localStorage.getItem('erp_token') || '';
 
   const renderContent = () => {
@@ -3114,7 +4041,7 @@ function App() {
       return views[activeView] || <StudentDashboard user={user}/>;
     }
     if (user.role === 'teacher') {
-      const views = { dashboard:<TeacherDashboard user={user}/>, 'class-attendance':<ClassAttendancePage/>, 'marks-entry':<MarksEntryPage/>, timetable:<TimetablePage/>, notifications:<NotificationsPage/>, 'exam-schedule':<ExamSchedulePage/> };
+      const views = { dashboard:<TeacherDashboard user={user}/>, 'class-attendance':<ClassAttendancePage/>, 'marks-entry':<MarksEntryPage/>, 'teacher-chat':<TeacherChatPage user={user}/>, timetable:<TimetablePage/>, notifications:<NotificationsPage/>, 'exam-schedule':<ExamSchedulePage/> };
       return views[activeView] || <TeacherDashboard user={user}/>;
     }
     if (user.role === 'admin') {
@@ -3124,8 +4051,6 @@ function App() {
   };
 
   if (!user) return <LoginScreen onLogin={(u)=>{setUser(u);setActiveView('dashboard');}}/>;
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="app-layout">
       {/* Mobile overlay */}
