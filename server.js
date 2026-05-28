@@ -124,6 +124,46 @@ const notifSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Notification = mongoose.model('Notification', notifSchema);
 
+const chatMessageSchema = new mongoose.Schema({
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  recipient: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  text: { type: String, required: true, trim: true, maxlength: 2000 },
+  readAt: Date,
+}, { timestamps: true });
+chatMessageSchema.index({ sender: 1, recipient: 1, createdAt: -1 });
+const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema);
+
+const chatClients = new Map();
+
+const serializeChatMessage = (message) => {
+  const sender = message.sender || {};
+  const recipient = message.recipient || {};
+  return {
+    id: String(message._id),
+    senderId: String(sender._id || sender),
+    senderName: sender.name || '',
+    recipientId: String(recipient._id || recipient),
+    recipientName: recipient.name || '',
+    text: message.text,
+    readAt: message.readAt || null,
+    createdAt: message.createdAt,
+  };
+};
+
+const sendChatEvent = (res, event, payload) => {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+};
+
+const broadcastChatMessage = (message) => {
+  const payload = serializeChatMessage(message);
+  [payload.senderId, payload.recipientId].forEach((userId) => {
+    const clients = chatClients.get(userId);
+    if (!clients) return;
+    clients.forEach((client) => sendChatEvent(client, 'message', payload));
+  });
+};
+
 // ── Middleware ──
 const protect = (req, res, next) => {
   const auth = req.headers.authorization;
@@ -149,6 +189,8 @@ app.get('/api/seed', async (req, res) => {
     const users = [
       { name: 'Dr. Ramesh Kumar',   email: 'admin@edu.com',   password: 'admin123',  role: 'admin'   },
       { name: 'Prof. Anjali Singh', email: 'teacher@edu.com', password: 'teach123',  role: 'teacher' },
+      { name: 'Dr. Suresh Nair',    email: 'suresh@edu.com',  password: 'teach123',  role: 'teacher' },
+      { name: 'Prof. Meena Rao',    email: 'meena@edu.com',   password: 'teach123',  role: 'teacher' },
       { name: 'Arjun Mehta',        email: 'student@edu.com', password: 'stud123',   role: 'student' },
     ];
     const results = [];
@@ -514,7 +556,174 @@ app.post('/api/notifications/send', protect, restrictTo('admin'), async (req, re
   }
 });
 
-// ── Admin Stats ──
+// Teacher chat routes
+app.get('/api/chat/teachers', protect, restrictTo('teacher'), async (req, res) => {
+  try {
+    const currentUserId = new mongoose.Types.ObjectId(req.user.id);
+    const teachers = await User.find({ role: 'teacher', _id: { $ne: currentUserId } })
+      .select('name email role')
+      .sort({ name: 1 })
+      .lean();
+
+    const teacherIds = teachers.map((teacher) => teacher._id);
+    const latestMessages = await ChatMessage.find({
+      $or: [
+        { sender: currentUserId, recipient: { $in: teacherIds } },
+        { sender: { $in: teacherIds }, recipient: currentUserId },
+      ],
+    }).sort({ createdAt: -1 }).limit(500).lean();
+
+    const latestByTeacher = new Map();
+    latestMessages.forEach((message) => {
+      const otherId = String(message.sender) === String(req.user.id)
+        ? String(message.recipient)
+        : String(message.sender);
+      if (!latestByTeacher.has(otherId)) latestByTeacher.set(otherId, message);
+    });
+
+    const unreadRows = await ChatMessage.aggregate([
+      { $match: { recipient: currentUserId, readAt: null } },
+      { $group: { _id: '$sender', count: { $sum: 1 } } },
+    ]);
+    const unreadByTeacher = new Map(unreadRows.map((row) => [String(row._id), row.count]));
+
+    res.json(teachers.map((teacher) => {
+      const id = String(teacher._id);
+      const latest = latestByTeacher.get(id);
+      return {
+        id,
+        name: teacher.name,
+        email: teacher.email,
+        role: teacher.role,
+        lastMessage: latest ? latest.text : '',
+        lastMessageAt: latest ? latest.createdAt : null,
+        unread: unreadByTeacher.get(id) || 0,
+      };
+    }));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/chat/messages/:teacherId', protect, restrictTo('teacher'), async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(teacherId) || teacherId === req.user.id) {
+      return res.status(400).json({ message: 'Invalid teacher selected' });
+    }
+
+    const teacher = await User.findOne({ _id: teacherId, role: 'teacher' }).select('_id');
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+
+    const messages = await ChatMessage.find({
+      $or: [
+        { sender: req.user.id, recipient: teacherId },
+        { sender: teacherId, recipient: req.user.id },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .populate('sender', 'name email role')
+      .populate('recipient', 'name email role')
+      .lean();
+
+    await ChatMessage.updateMany(
+      { sender: teacherId, recipient: req.user.id, readAt: null },
+      { $set: { readAt: new Date() } }
+    );
+
+    res.json(messages.reverse().map(serializeChatMessage));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.patch('/api/chat/messages/:teacherId/read', protect, restrictTo('teacher'), async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(teacherId) || teacherId === req.user.id) {
+      return res.status(400).json({ message: 'Invalid teacher selected' });
+    }
+
+    await ChatMessage.updateMany(
+      { sender: teacherId, recipient: req.user.id, readAt: null },
+      { $set: { readAt: new Date() } }
+    );
+
+    res.json({ message: 'Messages marked read' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/chat/messages', protect, restrictTo('teacher'), async (req, res) => {
+  try {
+    const { recipientId, text } = req.body;
+    const cleanText = String(text || '').trim();
+    if (!mongoose.Types.ObjectId.isValid(recipientId) || recipientId === req.user.id) {
+      return res.status(400).json({ message: 'Invalid recipient' });
+    }
+    if (!cleanText) return res.status(400).json({ message: 'Message cannot be empty' });
+    if (cleanText.length > 2000) return res.status(400).json({ message: 'Message is too long' });
+
+    const recipient = await User.findOne({ _id: recipientId, role: 'teacher' }).select('_id');
+    if (!recipient) return res.status(404).json({ message: 'Teacher not found' });
+
+    const created = await ChatMessage.create({
+      sender: req.user.id,
+      recipient: recipientId,
+      text: cleanText,
+    });
+    const message = await ChatMessage.findById(created._id)
+      .populate('sender', 'name email role')
+      .populate('recipient', 'name email role')
+      .lean();
+
+    broadcastChatMessage(message);
+    res.status(201).json(serializeChatMessage(message));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/chat/stream', (req, res) => {
+  const token = req.query.token;
+  if (!token) return res.status(401).json({ message: 'Not authorized' });
+
+  let user;
+  try {
+    user = jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+
+  if (user.role !== 'teacher') return res.status(403).json({ message: 'Access denied' });
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  if (res.flushHeaders) res.flushHeaders();
+
+  const userId = String(user.id);
+  if (!chatClients.has(userId)) chatClients.set(userId, new Set());
+  chatClients.get(userId).add(res);
+  sendChatEvent(res, 'connected', { userId });
+
+  const heartbeat = setInterval(() => {
+    sendChatEvent(res, 'ping', { at: Date.now() });
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    const clients = chatClients.get(userId);
+    if (!clients) return;
+    clients.delete(res);
+    if (clients.size === 0) chatClients.delete(userId);
+  });
+});
+
+// Admin Stats
 app.get('/api/admin/stats', protect, restrictTo('admin'), async (req, res) => {
   try {
     const [students, activeStudents, teachers, pendingFees] = await Promise.all([
