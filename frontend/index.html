@@ -7,6 +7,7 @@
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -201,6 +202,10 @@
   .chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12.5px; font-weight: 500; }
 
   /* Scrollbar */
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-4px); opacity: 1; }
+  }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
@@ -483,6 +488,7 @@ function Sidebar({ user, activeView, setActiveView, onLogout, isOpen }) {
     { id: 'dashboard',        label: 'Dashboard',        icon: 'dashboard'  },
     { id: 'class-attendance', label: 'Class Attendance', icon: 'attendance' },
     { id: 'marks-entry',      label: 'Marks Entry',      icon: 'marks'      },
+    { id: 'teacher-chat',     label: 'Teacher Chat',     icon: 'chat'       },
     { id: 'timetable',        label: 'Timetable',        icon: 'schedule'   },
     { id: 'exam-schedule',    label: 'Exam Schedule',    icon: 'schedule'   },
     { id: 'notifications',    label: 'Notifications',    icon: 'bell'       },
@@ -3688,126 +3694,169 @@ function usePushNotifications() {
 
 
 
-// ─── Teacher Chat — WhatsApp Style ───────────────────────────────────────────
+// ─── Teacher Chat — Real-time Socket.io ──────────────────────────────────────
 
-// Global chat store — sab teachers ke messages
-const CHAT_STORAGE_KEY = 'erp_teacher_chat';
-
-const getChatStore = () => {
-  try {
-    return JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '[]');
-  } catch(e) { return []; }
+// Socket connection — global
+let _socket = null;
+const getSocket = () => {
+  if (!_socket) {
+    _socket = io(API_URL, { transports: ['websocket', 'polling'] });
+  }
+  return _socket;
 };
-
-const saveChatStore = (msgs) => {
-  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(msgs));
-  window.dispatchEvent(new Event('erp_chat_update'));
-};
-
-const TEACHER_LIST = [
-  { id: 'teacher1', name: 'Prof. Anjali Singh',  dept: 'CS',  avatar: 'AS', color: '#7c3aed' },
-  { id: 'teacher2', name: 'Dr. Suresh Nair',     dept: 'CS',  avatar: 'SN', color: '#2563eb' },
-  { id: 'teacher3', name: 'Prof. Meena Rao',     dept: 'IT',  avatar: 'MR', color: '#16a34a' },
-  { id: 'teacher4', name: 'Dr. Alok Gupta',      dept: 'ME',  avatar: 'AG', color: '#d97706' },
-  { id: 'teacher5', name: 'Prof. Rekha Soni',    dept: 'EE',  avatar: 'RS', color: '#dc2626' },
-];
 
 function TeacherChatPage({ user }) {
-  const myName    = user?.name || 'Prof. Anjali Singh';
-  const myTeacher = TEACHER_LIST.find(t => t.name === myName) || TEACHER_LIST[0];
+  const myId   = user?.id   || '';
+  const myName = user?.name || 'Teacher';
 
-  const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [messages, setMessages]               = useState([]);
-  const [allMessages, setAllMessages]         = useState(getChatStore);
-  const [input, setInput]                     = useState('');
-  const [search, setSearch]                   = useState('');
-  const [typing, setTyping]                   = useState(false);
-  const messagesEndRef                        = React.useRef(null);
-  const inputRef                              = React.useRef(null);
+  const [teachers, setTeachers]       = useState([]);
+  const [selected, setSelected]       = useState(null);
+  const [messages, setMessages]       = useState([]);
+  const [input, setInput]             = useState('');
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [typing, setTyping]           = useState(false);
+  const [search, setSearch]           = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [unreadMap, setUnreadMap]     = useState({});
+  const messagesEndRef                = React.useRef(null);
+  const inputRef                      = React.useRef(null);
+  const typingTimeout                 = React.useRef(null);
+  const token                         = localStorage.getItem('erp_token') || '';
 
-  // Poll for new messages every 2 seconds
+  // Avatar colors
+  const getColor = (name) => {
+    const colors = ['#7c3aed','#2563eb','#16a34a','#d97706','#dc2626','#0891b2','#be185d'];
+    let hash = 0;
+    for(let i=0;i<name.length;i++) hash = name.charCodeAt(i) + ((hash<<5)-hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
+  const getAvatar = (name) => name.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+
+  // Load teachers list
   useEffect(() => {
-    const interval = setInterval(() => {
-      const fresh = getChatStore();
-      setAllMessages(fresh);
-    }, 2000);
-
-    const onUpdate = () => setAllMessages(getChatStore());
-    window.addEventListener('erp_chat_update', onUpdate);
-    window.addEventListener('storage', onUpdate);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('erp_chat_update', onUpdate);
-      window.removeEventListener('storage', onUpdate);
+    const loadTeachers = async () => {
+      try {
+        const data = await api('/api/chat/teachers/list','GET',null,token);
+        setTeachers(data);
+      } catch(e) {
+        // Fallback demo teachers
+        setTeachers([
+          {_id:'t1', name:'Dr. Suresh Nair',   email:'teacher2@edu.com'},
+          {_id:'t2', name:'Prof. Meena Rao',   email:'teacher3@edu.com'},
+          {_id:'t3', name:'Dr. Alok Gupta',    email:'teacher4@edu.com'},
+          {_id:'t4', name:'Prof. Rekha Soni',  email:'teacher5@edu.com'},
+        ]);
+      }
     };
+    loadTeachers();
   }, []);
 
-  // Filter messages for selected conversation
+  // Socket.io setup
   useEffect(() => {
-    if (!selectedTeacher) return;
-    const convMsgs = allMessages.filter(m =>
-      (m.senderId === myTeacher.id && m.receiverId === selectedTeacher.id) ||
-      (m.senderId === selectedTeacher.id && m.receiverId === myTeacher.id)
-    );
-    setMessages(convMsgs);
-  }, [allMessages, selectedTeacher]);
+    const socket = getSocket();
 
-  // Auto scroll to bottom
+    // Tell server I am online
+    socket.emit('user_online', myId);
+
+    // Online users list
+    socket.on('online_users', (users) => setOnlineUsers(users));
+
+    // Receive message
+    socket.on('receive_message', (msg) => {
+      setMessages(prev => {
+        // Duplicate check
+        if (prev.find(m => m._id === msg._id)) return prev;
+        return [...prev, msg];
+      });
+      // Unread badge update
+      setUnreadMap(prev => {
+        if (msg.senderId !== myId && selected?._id !== msg.senderId) {
+          return {...prev, [msg.senderId]: (prev[msg.senderId]||0)+1};
+        }
+        return prev;
+      });
+    });
+
+    // Typing indicator
+    socket.on('user_typing', (data) => {
+      if (selected && data.senderId === selected._id) setTyping(true);
+    });
+    socket.on('user_stop_typing', (data) => {
+      if (selected && data.senderId === selected._id) setTyping(false);
+    });
+
+    return () => {
+      socket.off('online_users');
+      socket.off('receive_message');
+      socket.off('user_typing');
+      socket.off('user_stop_typing');
+    };
+  }, [myId, selected]);
+
+  // Load chat history when teacher selected
+  useEffect(() => {
+    if (!selected) return;
+    setLoading(true);
+    setMessages([]);
+    setTyping(false);
+    // Clear unread
+    setUnreadMap(prev => ({...prev, [selected._id]: 0}));
+
+    api('/api/chat/' + selected._id, 'GET', null, token)
+      .then(data => setMessages(data))
+      .catch(() => setMessages([]))
+      .finally(() => setLoading(false));
+
+    // Mark as read
+    getSocket().emit('mark_read', { senderId: selected._id, receiverId: myId });
+    inputRef.current?.focus();
+  }, [selected]);
+
+  // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, typing]);
 
+  // Send message
   const sendMessage = () => {
-    if (!input.trim() || !selectedTeacher) return;
-    const newMsg = {
-      id: Date.now(),
-      senderId:   myTeacher.id,
-      senderName: myTeacher.name,
-      receiverId: selectedTeacher.id,
-      text:       input.trim(),
-      time:       new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }),
-      date:       new Date().toLocaleDateString('en-IN'),
-      timestamp:  Date.now(),
-    };
-    const updated = [...getChatStore(), newMsg];
-    saveChatStore(updated);
-    setAllMessages(updated);
+    if (!input.trim() || !selected) return;
+    const socket = getSocket();
+    socket.emit('send_message', {
+      senderId:   myId,
+      senderName: myName,
+      receiverId: selected._id,
+      message:    input.trim(),
+    });
+    socket.emit('stop_typing', { senderId: myId, receiverId: selected._id });
     setInput('');
     inputRef.current?.focus();
   };
 
-  // Get last message for each teacher in sidebar
-  const getLastMsg = (teacher) => {
-    const msgs = allMessages.filter(m =>
-      (m.senderId === myTeacher.id && m.receiverId === teacher.id) ||
-      (m.senderId === teacher.id && m.receiverId === myTeacher.id)
-    );
-    return msgs[msgs.length - 1] || null;
-  };
-
-  const getUnreadCount = (teacher) => {
-    return allMessages.filter(m =>
-      m.senderId === teacher.id && m.receiverId === myTeacher.id && !m.read
-    ).length;
-  };
-
-  const otherTeachers = TEACHER_LIST.filter(t => t.id !== myTeacher.id)
-    .filter(t => t.name.toLowerCase().includes(search.toLowerCase()) ||
-                 t.dept.toLowerCase().includes(search.toLowerCase()));
-
-  const formatDate = (date) => {
-    const today = new Date().toLocaleDateString('en-IN');
-    return date === today ? 'Today' : date;
+  // Typing indicator
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    const socket = getSocket();
+    if (!selected) return;
+    socket.emit('typing', { senderId: myId, receiverId: selected._id });
+    clearTimeout(typingTimeout.current);
+    typingTimeout.current = setTimeout(() => {
+      socket.emit('stop_typing', { senderId: myId, receiverId: selected._id });
+    }, 1500);
   };
 
   // Group messages by date
   const groupedMessages = messages.reduce((groups, msg) => {
-    const date = formatDate(msg.date);
-    if (!groups[date]) groups[date] = [];
-    groups[date].push(msg);
+    const date = new Date(msg.createdAt).toLocaleDateString('en-IN');
+    const today = new Date().toLocaleDateString('en-IN');
+    const label = date === today ? 'Today' : date;
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(msg);
     return groups;
   }, {});
+
+  const filteredTeachers = teachers.filter(t =>
+    t.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div style={{display:'flex',height:'calc(100vh - 130px)',background:'var(--surface)',
@@ -3819,72 +3868,66 @@ function TeacherChatPage({ user }) {
         {/* Header */}
         <div style={{padding:'16px 16px 12px',borderBottom:'1px solid var(--border)'}}>
           <div style={{fontSize:16,fontWeight:700,marginBottom:12}}>💬 Teacher Chat</div>
-          {/* Search */}
           <div style={{position:'relative'}}>
             <div style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',opacity:0.4}}>
               <Icon name="search" size={14}/>
             </div>
-            <input className="form-input" placeholder="Search teachers..." value={search}
-              onChange={e=>setSearch(e.target.value)}
-              style={{paddingLeft:32,fontSize:13,padding:'8px 8px 8px 32px'}}/>
+            <input className="form-input" placeholder="Search teachers..."
+              value={search} onChange={e=>setSearch(e.target.value)}
+              style={{paddingLeft:32,fontSize:13}}/>
           </div>
         </div>
 
         {/* My Profile */}
         <div style={{padding:'10px 16px',background:'var(--accent-bg)',borderBottom:'1px solid var(--accent-border)',
           display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:34,height:34,borderRadius:'50%',background:myTeacher.color,
+          <div style={{width:34,height:34,borderRadius:'50%',background:getColor(myName),
             color:'white',display:'flex',alignItems:'center',justifyContent:'center',
             fontSize:12,fontWeight:700,flexShrink:0}}>
-            {myTeacher.avatar}
+            {getAvatar(myName)}
           </div>
           <div>
-            <div style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>{myTeacher.name}</div>
+            <div style={{fontSize:13,fontWeight:600}}>{myName}</div>
             <div style={{fontSize:11,color:'var(--accent)'}}>● Online</div>
           </div>
         </div>
 
         {/* Teacher List */}
         <div style={{flex:1,overflowY:'auto'}}>
-          {otherTeachers.map(teacher => {
-            const lastMsg   = getLastMsg(teacher);
-            const unread    = getUnreadCount(teacher);
-            const isActive  = selectedTeacher?.id === teacher.id;
-
+          {filteredTeachers.length === 0 ? (
+            <div style={{padding:24,textAlign:'center',color:'var(--text3)',fontSize:13}}>
+              Koi teacher nahi mila
+            </div>
+          ) : filteredTeachers.map(teacher => {
+            const isActive  = selected?._id === teacher._id;
+            const isOnline  = onlineUsers.includes(teacher._id);
+            const unread    = unreadMap[teacher._id] || 0;
             return (
-              <div key={teacher.id} onClick={()=>setSelectedTeacher(teacher)}
-                style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',
+              <div key={teacher._id} onClick={()=>setSelected(teacher)}
+                style={{display:'flex',alignItems:'center',gap:12,padding:'13px 16px',
                   cursor:'pointer',borderBottom:'1px solid var(--border)',
-                  background:isActive?'var(--accent-bg)':'transparent',
-                  transition:'background 0.15s'}}>
-
-                {/* Avatar */}
+                  background:isActive?'var(--accent-bg)':'transparent',transition:'background 0.15s'}}>
                 <div style={{position:'relative',flexShrink:0}}>
-                  <div style={{width:42,height:42,borderRadius:'50%',background:teacher.color,
+                  <div style={{width:42,height:42,borderRadius:'50%',background:getColor(teacher.name),
                     color:'white',display:'flex',alignItems:'center',justifyContent:'center',
                     fontSize:13,fontWeight:700}}>
-                    {teacher.avatar}
+                    {getAvatar(teacher.name)}
                   </div>
-                  <div style={{position:'absolute',bottom:1,right:1,width:10,height:10,
-                    borderRadius:'50%',background:'var(--green)',border:'2px solid var(--surface)'}}/>
+                  <div style={{position:'absolute',bottom:1,right:1,width:10,height:10,borderRadius:'50%',
+                    background:isOnline?'var(--green)':'var(--border2)',border:'2px solid var(--surface)'}}/>
                 </div>
-
-                {/* Info */}
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <span style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>{teacher.name.split(' ').slice(1).join(' ')}</span>
-                    {lastMsg && <span style={{fontSize:11,color:'var(--text3)'}}>{lastMsg.time}</span>}
-                  </div>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:2}}>
-                    <span style={{fontSize:12,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:150}}>
-                      {lastMsg ? (lastMsg.senderId===myTeacher.id?'You: ':'')+lastMsg.text : `Dept: ${teacher.dept}`}
-                    </span>
+                  <div style={{display:'flex',justifyContent:'space-between'}}>
+                    <span style={{fontSize:14,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{teacher.name}</span>
                     {unread > 0 && (
                       <span style={{background:'var(--accent)',color:'white',borderRadius:99,
-                        padding:'1px 7px',fontSize:11,fontWeight:700,flexShrink:0}}>
+                        padding:'1px 7px',fontSize:11,fontWeight:700,flexShrink:0,marginLeft:4}}>
                         {unread}
                       </span>
                     )}
+                  </div>
+                  <div style={{fontSize:11,color:isOnline?'var(--green)':'var(--text3)',marginTop:2}}>
+                    {isOnline ? '● Online' : '● Offline'}
                   </div>
                 </div>
               </div>
@@ -3894,12 +3937,12 @@ function TeacherChatPage({ user }) {
       </div>
 
       {/* ── RIGHT: Chat Window ── */}
-      {!selectedTeacher ? (
+      {!selected ? (
         <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',
-          flexDirection:'column',gap:16,color:'var(--text3)'}}>
+          flexDirection:'column',gap:12,color:'var(--text3)'}}>
           <div style={{fontSize:56}}>💬</div>
-          <div style={{fontSize:16,fontWeight:600,color:'var(--text)'}}>Select a teacher to chat</div>
-          <div style={{fontSize:13}}>Left side se kisi bhi teacher ko select karo</div>
+          <div style={{fontSize:16,fontWeight:600,color:'var(--text)'}}>Kisi teacher ko select karo</div>
+          <div style={{fontSize:13}}>Left side se teacher choose karo — chat shuru karo!</div>
         </div>
       ) : (
         <div style={{flex:1,display:'flex',flexDirection:'column'}}>
@@ -3907,77 +3950,82 @@ function TeacherChatPage({ user }) {
           {/* Chat Header */}
           <div style={{padding:'14px 20px',borderBottom:'1px solid var(--border)',
             display:'flex',alignItems:'center',gap:12,background:'var(--surface)'}}>
-            <div style={{width:38,height:38,borderRadius:'50%',background:selectedTeacher.color,
-              color:'white',display:'flex',alignItems:'center',justifyContent:'center',
-              fontSize:13,fontWeight:700,flexShrink:0}}>
-              {selectedTeacher.avatar}
+            <div style={{position:'relative'}}>
+              <div style={{width:40,height:40,borderRadius:'50%',background:getColor(selected.name),
+                color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+                fontSize:13,fontWeight:700}}>
+                {getAvatar(selected.name)}
+              </div>
+              <div style={{position:'absolute',bottom:1,right:1,width:10,height:10,borderRadius:'50%',
+                background:onlineUsers.includes(selected._id)?'var(--green)':'var(--border2)',
+                border:'2px solid var(--surface)'}}/>
             </div>
             <div>
-              <div style={{fontSize:15,fontWeight:700}}>{selectedTeacher.name}</div>
-              <div style={{fontSize:12,color:'var(--green)'}}>● Online · Dept: {selectedTeacher.dept}</div>
+              <div style={{fontSize:15,fontWeight:700}}>{selected.name}</div>
+              <div style={{fontSize:12,color:onlineUsers.includes(selected._id)?'var(--green)':'var(--text3)'}}>
+                {typing ? '✍️ Typing...' : onlineUsers.includes(selected._id) ? '● Online' : '● Offline'}
+              </div>
             </div>
           </div>
 
-          {/* Messages Area */}
-          <div style={{flex:1,overflowY:'auto',padding:'16px 20px',
-            background:'var(--bg)',display:'flex',flexDirection:'column',gap:4}}>
+          {/* Messages */}
+          <div style={{flex:1,overflowY:'auto',padding:'16px 20px',background:'var(--bg)',
+            display:'flex',flexDirection:'column',gap:2}}>
 
-            {Object.keys(groupedMessages).length === 0 ? (
+            {loading ? (
+              <div style={{textAlign:'center',padding:40,color:'var(--text3)'}}>
+                ⏳ Messages load ho rahe hain...
+              </div>
+            ) : Object.keys(groupedMessages).length === 0 ? (
               <div style={{textAlign:'center',marginTop:60,color:'var(--text3)'}}>
                 <div style={{fontSize:40,marginBottom:12}}>👋</div>
                 <div style={{fontSize:15,fontWeight:600,color:'var(--text)'}}>
-                  Start a conversation with {selectedTeacher.name.split(' ')[1]}!
+                  {selected.name.split(' ')[1]} ko message karo!
                 </div>
-                <div style={{fontSize:13,marginTop:6}}>Abhi koi message nahi hai — pehla message bhejo!</div>
+                <div style={{fontSize:13,marginTop:6}}>Pehla message bhejo 😊</div>
               </div>
             ) : (
               Object.entries(groupedMessages).map(([date, msgs]) => (
                 <div key={date}>
-                  {/* Date Divider */}
-                  <div style={{display:'flex',alignItems:'center',gap:12,margin:'12px 0'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,margin:'12px 0'}}>
                     <div style={{flex:1,height:1,background:'var(--border)'}}/>
-                    <span style={{fontSize:12,color:'var(--text3)',background:'var(--bg)',
-                      padding:'2px 12px',borderRadius:99,border:'1px solid var(--border)'}}>
+                    <span style={{fontSize:11,color:'var(--text3)',padding:'2px 12px',
+                      borderRadius:99,border:'1px solid var(--border)',background:'var(--bg)'}}>
                       {date}
                     </span>
                     <div style={{flex:1,height:1,background:'var(--border)'}}/>
                   </div>
-
-                  {/* Messages */}
-                  {msgs.map((msg, idx) => {
-                    const isMe = msg.senderId === myTeacher.id;
-                    const showAvatar = !isMe && (idx === 0 || msgs[idx-1]?.senderId !== msg.senderId);
+                  {msgs.map((msg) => {
+                    const isMe = msg.senderId === myId;
                     return (
-                      <div key={msg.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start',
-                        marginBottom:4,alignItems:'flex-end',gap:8}}>
-
-                        {/* Other person avatar */}
+                      <div key={msg._id || msg.timestamp} style={{display:'flex',
+                        justifyContent:isMe?'flex-end':'flex-start',
+                        marginBottom:6,alignItems:'flex-end',gap:8}}>
                         {!isMe && (
                           <div style={{width:28,height:28,borderRadius:'50%',
-                            background:showAvatar?selectedTeacher.color:'transparent',
-                            color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+                            background:getColor(selected.name),color:'white',
+                            display:'flex',alignItems:'center',justifyContent:'center',
                             fontSize:11,fontWeight:700,flexShrink:0}}>
-                            {showAvatar ? selectedTeacher.avatar : ''}
+                            {getAvatar(selected.name)}
                           </div>
                         )}
-
-                        {/* Message Bubble */}
                         <div style={{maxWidth:'65%'}}>
                           <div style={{
-                            padding:'9px 14px',
-                            borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                            background: isMe ? 'var(--accent)' : 'var(--surface)',
-                            color: isMe ? 'white' : 'var(--text)',
-                            border: isMe ? 'none' : '1px solid var(--border)',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
-                            fontSize: 14,
-                            lineHeight: 1.5,
+                            padding:'10px 14px',
+                            borderRadius:isMe?'18px 18px 4px 18px':'18px 18px 18px 4px',
+                            background:isMe?'var(--accent)':'var(--surface)',
+                            color:isMe?'white':'var(--text)',
+                            border:isMe?'none':'1px solid var(--border)',
+                            fontSize:14,lineHeight:1.5,
+                            boxShadow:'0 1px 2px rgba(0,0,0,0.06)',
                           }}>
-                            {msg.text}
+                            {msg.message}
                           </div>
                           <div style={{fontSize:11,color:'var(--text3)',marginTop:3,
-                            textAlign:isMe?'right':'left',paddingLeft:isMe?0:4,paddingRight:isMe?4:0}}>
-                            {msg.time} {isMe && '✓✓'}
+                            textAlign:isMe?'right':'left',
+                            paddingRight:isMe?4:0,paddingLeft:isMe?0:4}}>
+                            {msg.time || new Date(msg.createdAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+                            {isMe && ' ✓✓'}
                           </div>
                         </div>
                       </div>
@@ -3986,30 +4034,49 @@ function TeacherChatPage({ user }) {
                 </div>
               ))
             )}
+
+            {/* Typing indicator */}
+            {typing && (
+              <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0'}}>
+                <div style={{width:28,height:28,borderRadius:'50%',background:getColor(selected.name),
+                  color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+                  fontSize:11,fontWeight:700}}>
+                  {getAvatar(selected.name)}
+                </div>
+                <div style={{background:'var(--surface)',border:'1px solid var(--border)',
+                  borderRadius:'18px 18px 18px 4px',padding:'10px 16px'}}>
+                  <div style={{display:'flex',gap:4,alignItems:'center'}}>
+                    {[0,1,2].map(i=>(
+                      <div key={i} style={{width:7,height:7,borderRadius:'50%',
+                        background:'var(--text3)',animation:`bounce 1s infinite ${i*0.2}s`}}/>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef}/>
           </div>
 
-          {/* Input Area */}
+          {/* Input */}
           <div style={{padding:'12px 16px',borderTop:'1px solid var(--border)',
-            background:'var(--surface)',display:'flex',gap:10,alignItems:'flex-end'}}>
+            background:'var(--surface)',display:'flex',gap:10,alignItems:'center'}}>
             <div style={{flex:1,background:'var(--bg)',border:'1px solid var(--border)',
-              borderRadius:24,padding:'10px 16px',display:'flex',alignItems:'center'}}>
+              borderRadius:24,padding:'10px 18px',display:'flex',alignItems:'center'}}>
               <input
                 ref={inputRef}
                 value={input}
-                onChange={e=>setInput(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&(e.preventDefault(),sendMessage())}
-                placeholder="Message likho..."
+                placeholder="Message likho... (Enter to send)"
                 style={{flex:1,border:'none',background:'transparent',outline:'none',
                   fontSize:14,color:'var(--text)',fontFamily:'inherit'}}
               />
             </div>
-            {/* Send Button */}
             <button onClick={sendMessage} disabled={!input.trim()}
-              style={{width:44,height:44,borderRadius:'50%',border:'none',
-                background:input.trim()?'var(--accent)':'var(--border)',
-                color:'white',display:'flex',alignItems:'center',justifyContent:'center',
-                cursor:input.trim()?'pointer':'default',transition:'all 0.2s',flexShrink:0}}>
+              style={{width:44,height:44,borderRadius:'50%',border:'none',flexShrink:0,
+                background:input.trim()?'var(--accent)':'var(--border)',color:'white',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                cursor:input.trim()?'pointer':'default',transition:'all 0.2s'}}>
               <Icon name="send" size={18} color="white"/>
             </button>
           </div>
