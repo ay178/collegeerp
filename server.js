@@ -181,12 +181,20 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Message read kiya
+  // Message read kiya — blue tick
   socket.on('mark_read', async (data) => {
     await Chat.updateMany(
       { senderId: data.senderId, receiverId: data.receiverId, read: false },
       { read: true }
     );
+    // Sender ko batao ki message read ho gaya — blue tick
+    const senderSocketId = onlineUsers.get(data.senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit('message_read', {
+        receiverId: data.receiverId,
+        readBy: data.receiverId,
+      });
+    }
   });
 
   // Disconnect
