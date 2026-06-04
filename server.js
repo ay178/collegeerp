@@ -197,6 +197,27 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Message delete karo
+  socket.on('delete_message', async (data) => {
+    try {
+      await Chat.findByIdAndUpdate(data.messageId, {
+        message: '🚫 This message was deleted',
+        deleted: true,
+      });
+      // Receiver ko bhi batao
+      const receiverSocketId = onlineUsers.get(data.receiverId);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit('message_deleted', {
+          messageId: data.messageId,
+        });
+      }
+      // Sender ko confirm karo
+      socket.emit('message_deleted', { messageId: data.messageId });
+    } catch(err) {
+      console.error('Delete error:', err.message);
+    }
+  });
+
   // Disconnect
   socket.on('disconnect', () => {
     for (const [userId, socketId] of onlineUsers.entries()) {
@@ -258,7 +279,6 @@ app.get('/api/seed', async (req, res) => {
       { name: 'Dr. Suresh Nair',     email: 'teacher2@edu.com', password: 'teach123',   role: 'teacher' },
       { name: 'Prof. Meena Rao',     email: 'teacher3@edu.com', password: 'teach123',   role: 'teacher' },
       { name: 'Arjun Mehta',         email: 'student@edu.com',  password: 'stud123',    role: 'student' },
-      { name: 'Ayush verma',         email: 'ayushverma32790@gmail.com', password: 'stud123',    role: 'student' }
     ];
     const results = [];
     for (const u of users) {
