@@ -137,7 +137,7 @@ io.on('connection', (socket) => {
   socket.on('send_message', async (data) => {
     try {
       const { senderId, senderName, receiverId, message } = data;
-      const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
 
       // MongoDB mein save karo
       const chat = await Chat.create({ senderId, senderName, receiverId, message, time });
@@ -243,14 +243,14 @@ app.get('/api/chat/unread/:senderId', protect, async (req, res) => {
 app.get('/api/seed', async (req, res) => {
   try {
     const users = [
-  { name: 'Dr. Ramesh Kumar',    email: 'admin@edu.com',    password: 'admin123',   role: 'admin'   },
-  { name: 'Prof. Anjali Singh',  email: 'teacher@edu.com',  password: 'teach123',   role: 'teacher' },
-  { name: 'Prof. Vicky Sharma',  email: 'vicky@edu.com',    password: 'vicky123',   role: 'teacher' },
-  { name: 'Prof. Ranjita Verma', email: 'ranjita@edu.com',  password: 'ranjita123', role: 'teacher' },
-  { name: 'Dr. Suresh Nair',     email: 'teacher2@edu.com', password: 'teach123',   role: 'teacher' },
-  { name: 'Prof. Meena Rao',     email: 'teacher3@edu.com', password: 'teach123',   role: 'teacher' },
-  { name: 'Arjun Mehta',         email: 'student@edu.com',  password: 'stud123',    role: 'student' },
-];
+      { name: 'Dr. Ramesh Kumar',    email: 'admin@edu.com',    password: 'admin123',   role: 'admin'   },
+      { name: 'Prof. Anjali Singh',  email: 'teacher@edu.com',  password: 'teach123',   role: 'teacher' },
+      { name: 'Prof. Vicky Sharma',  email: 'vicky@edu.com',    password: 'vicky123',   role: 'teacher' },
+      { name: 'Prof. Ranjita Verma', email: 'ranjita@edu.com',  password: 'ranjita123', role: 'teacher' },
+      { name: 'Dr. Suresh Nair',     email: 'teacher2@edu.com', password: 'teach123',   role: 'teacher' },
+      { name: 'Prof. Meena Rao',     email: 'teacher3@edu.com', password: 'teach123',   role: 'teacher' },
+      { name: 'Arjun Mehta',         email: 'student@edu.com',  password: 'stud123',    role: 'student' },
+    ];
     const results = [];
     for (const u of users) {
       const existing = await User.findOne({ email: u.email });
